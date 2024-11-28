@@ -91,21 +91,33 @@ const Questionnaire = () => {
     if (!questionnaire) return;
     
     const evaluationsData = {};
+    questionnaire.brands.forEach(brand => {
+      evaluationsData[brand._id] = {};
+      questionnaire.questions.forEach(question => {
+        evaluationsData[brand._id][question.criterion] = { rating: null, comment: '' };
+      });
+    });
+
     response.answers.forEach(answer => {
       if (!evaluationsData[answer.brand]) {
         evaluationsData[answer.brand] = {};
-        questionnaire.questions.forEach(question => {
-          evaluationsData[answer.brand][question.criterion] = { rating: null, comment: '' };
-        });
       }
       evaluationsData[answer.brand][answer.criterion] = {
-        rating: answer.rating,
+        rating: answer.rating || null,
         comment: answer.comments || ''
       };
     });
+
     setEvaluations(evaluationsData);
-    setPreferredBrand(response.comparativeEvaluation.preferredBrand);
-    setComments(response.comparativeEvaluation.comments || '');
+    
+    if (response.comparativeEvaluation) {
+      if (response.comparativeEvaluation.preferredBrand) {
+        setPreferredBrand(response.comparativeEvaluation.preferredBrand);
+      }
+      if (response.comparativeEvaluation.comments) {
+        setComments(response.comparativeEvaluation.comments);
+      }
+    }
   };
 
   const handleRatingChange = (brandId, criterion, field, value) => {

@@ -45,23 +45,41 @@ router.post('/:questionnaireId', [auth, validateResponse], async (req, res) => {
       });
     }
 
-    // Check if user has already submitted a response
-    const existingResponse = await Response.findOne({
-      questionnaire: questionnaire._id,
-      user: req.user._id
-    });
+    // Only check for existing submitted response if this is a submission
+    if (req.body.status === 'submitted') {
+      const existingSubmittedResponse = await Response.findOne({
+        questionnaire: questionnaire._id,
+        user: req.user._id,
+        status: 'submitted'
+      });
 
-    if (existingResponse) {
-      return res.status(400).json({ message: 'You have already submitted a response' });
+      if (existingSubmittedResponse) {
+        return res.status(400).json({ message: 'You have already submitted a response' });
+      }
     }
 
-    const response = new Response({
+    // Find existing draft to update or create new response
+    let response = await Response.findOne({
       questionnaire: questionnaire._id,
       user: req.user._id,
-      answers: req.body.answers,
-      comparativeEvaluation: req.body.comparativeEvaluation,
-      isSubmitted: true
+      status: 'draft'
     });
+
+    if (response) {
+      // Update existing draft
+      response.answers = req.body.answers;
+      response.comparativeEvaluation = req.body.comparativeEvaluation;
+      response.status = req.body.status;
+    } else {
+      // Create new response
+      response = new Response({
+        questionnaire: questionnaire._id,
+        user: req.user._id,
+        answers: req.body.answers,
+        comparativeEvaluation: req.body.comparativeEvaluation,
+        status: req.body.status
+      });
+    }
 
     await response.save();
     res.status(201).json(response);
