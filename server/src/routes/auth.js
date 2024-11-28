@@ -8,8 +8,7 @@ const router = express.Router();
 const validateRegistration = [
   body('username').trim().isLength({ min: 3 }).escape(),
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }),
-  body('role').isIn(['admin', 'client'])
+  body('password').isLength({ min: 6 })
 ];
 
 const validateLogin = [
@@ -25,7 +24,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, email, password, role } = req.body;
+    const { username, email, password } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ 
@@ -38,12 +37,12 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    // Create new user
+    // Create new user with role always set to 'client'
     const user = new User({
       username,
       email,
       password,
-      role
+      role: 'client' // Always set to client
     });
 
     await user.save();

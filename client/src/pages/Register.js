@@ -8,11 +8,7 @@ import {
   Typography,
   Box,
   Link,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
+  Alert
 } from '@mui/material';
 import { auth } from '../services/api';
 
@@ -22,8 +18,7 @@ const Register = () => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    role: 'client'
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -124,20 +119,6 @@ const Register = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
             />
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="role-label">Role</InputLabel>
-              <Select
-                labelId="role-label"
-                id="role"
-                name="role"
-                value={formData.role}
-                label="Role"
-                onChange={handleChange}
-              >
-                <MenuItem value="client">Client</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
-            </FormControl>
             <Button
               type="submit"
               fullWidth
