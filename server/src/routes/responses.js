@@ -11,7 +11,7 @@ const validateResponse = [
   body('answers.*.brand').isMongoId(),
   body('answers.*.criterion').isString().trim().notEmpty(),
   body('answers.*.rating').isInt({ min: 1, max: 5 }),
-  body('comparativeEvaluation.preferredBrand').isMongoId(),
+  body('comparativeEvaluation.preferredBrand').optional().isMongoId(),
   body('comparativeEvaluation.comments').optional().trim()
 ];
 
@@ -88,7 +88,7 @@ router.get('/questionnaire/:questionnaireId', [auth, isAdmin], async (req, res) 
   try {
     const responses = await Response.find({ 
       questionnaire: req.params.questionnaireId,
-      isSubmitted: true 
+      status: 'submitted'
     })
       .populate('user', 'username email')
       .populate('questionnaire', 'title status');
@@ -104,7 +104,7 @@ router.get('/statistics/:questionnaireId', [auth, isAdmin], async (req, res) => 
   try {
     const responses = await Response.find({
       questionnaire: req.params.questionnaireId,
-      isSubmitted: true
+      status: 'submitted'
     });
 
     const statistics = {

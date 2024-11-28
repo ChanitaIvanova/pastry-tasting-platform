@@ -20,7 +20,7 @@ export const validateResponse = (data) => {
 
   if (!data.answers?.length) {
     errors.answers = 'Ratings are required';
-  } else {
+  } else if (data.status === 'submitted') {
     const hasInvalidRating = data.answers.some(
       answer => !answer.rating || answer.rating < 1 || answer.rating > 5
     );
@@ -29,7 +29,7 @@ export const validateResponse = (data) => {
     }
   }
 
-  if (!data.comparativeEvaluation?.preferredBrand) {
+  if (data.status === 'submitted' && !data.comparativeEvaluation?.preferredBrand) {
     errors.preferredBrand = 'Please select your preferred brand';
   }
 

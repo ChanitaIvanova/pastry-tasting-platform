@@ -15,7 +15,8 @@ const RatingInput = ({
   rating, 
   comment, 
   onChange, 
-  disabled = false 
+  disabled = false,
+  description 
 }) => {
   return (
     <Box sx={{ mb: 3 }}>
@@ -23,6 +24,11 @@ const RatingInput = ({
         <FormLabel component="legend" sx={{ textTransform: 'capitalize' }}>
           {criterion}
         </FormLabel>
+        {description && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {description}
+          </Typography>
+        )}
         <RadioGroup
           row
           value={rating || ''}

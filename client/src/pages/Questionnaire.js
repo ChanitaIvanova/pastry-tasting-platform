@@ -23,6 +23,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import RatingInput from '../components/RatingInput';
 import { validateResponse } from '../utils/validation';
 import { useNotification } from '../contexts/NotificationContext';
+import { Save } from '@mui/icons-material';
 
 const Questionnaire = () => {
   const { id } = useParams();
@@ -38,6 +39,8 @@ const Questionnaire = () => {
   const [error, setError] = useState('');
   const { showNotification } = useNotification();
   const [existingResponse, setExistingResponse] = useState(null);
+  const [saveAsDraft, setSaveAsDraft] = useState(false);
+  const [loadingResponse, setLoadingResponse] = useState(true);
 
   useEffect(() => {
     fetchQuestionnaire();
@@ -70,6 +73,7 @@ const Questionnaire = () => {
 
   const fetchExistingResponse = async () => {
     try {
+      setLoadingResponse(true);
       const response = await responses.getMyResponses();
       const existing = response.data.find(r => r.questionnaire._id === id);
       if (existing) {
@@ -78,6 +82,8 @@ const Questionnaire = () => {
       }
     } catch (err) {
       console.error('Failed to fetch existing response:', err);
+    } finally {
+      setLoadingResponse(false);
     }
   };
 
@@ -117,37 +123,49 @@ const Questionnaire = () => {
 
   const isStepComplete = (brandId) => {
     const brandEval = evaluations[brandId];
-    return questionnaire.questions.every(question => 
-      brandEval?.[question.criterion]?.rating !== null
+    return !questionnaire.questions.some(question => 
+      brandEval?.[question.criterion]?.rating === null || 
+      brandEval?.[question.criterion]?.rating === 0
     );
   };
 
-  const handleSubmit = async () => {
+  const canSubmit = () => {
+    return questionnaire.brands.every(brand => isStepComplete(brand._id));
+  };
+
+  const handleSubmit = async (isDraft = false) => {
     const formattedAnswers = [];
     Object.entries(evaluations).forEach(([brandId, criteria]) => {
       Object.entries(criteria).forEach(([criterion, { rating, comment }]) => {
-        formattedAnswers.push({
-          brand: brandId,
-          criterion,
-          rating,
-          comments: comment
-        });
+        if (rating || comment) {
+          formattedAnswers.push({
+            brand: brandId,
+            criterion,
+            rating: rating || 0,
+            comments: comment
+          });
+        }
       });
     });
 
     const responseData = {
       answers: formattedAnswers,
-      comparativeEvaluation: {
-        preferredBrand,
-        comments
-      }
+      status: isDraft ? 'draft' : 'submitted'
     };
 
-    const { isValid, errors } = validateResponse(responseData);
-    
-    if (!isValid) {
-      setError(Object.values(errors).join('. '));
-      return;
+    if (!isDraft || preferredBrand || comments) {
+      responseData.comparativeEvaluation = {
+        ...(preferredBrand && { preferredBrand }),
+        ...(comments && { comments })
+      };
+    }
+
+    if (!isDraft) {
+      const { isValid, errors } = validateResponse(responseData);
+      if (!isValid) {
+        setError(Object.values(errors).join('. '));
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -156,34 +174,59 @@ const Questionnaire = () => {
     try {
       if (existingResponse) {
         await responses.update(existingResponse._id, responseData);
-        showNotification('Evaluation updated successfully', 'success');
+        showNotification(
+          isDraft ? 'Draft saved successfully' : 'Evaluation updated successfully', 
+          'success'
+        );
       } else {
         await responses.submit(id, responseData);
-        showNotification('Evaluation submitted successfully', 'success');
+        showNotification(
+          isDraft ? 'Draft saved successfully' : 'Evaluation submitted successfully', 
+          'success'
+        );
       }
-      navigate('/dashboard');
+      if (!isDraft) {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit evaluation');
+      setError(err.response?.data?.message || 'Failed to save evaluation');
       showNotification('Failed to save evaluation', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading || loadingResponse) return <LoadingSpinner />;
   if (!questionnaire) return <Alert severity="error">Questionnaire not found</Alert>;
 
   return (
     <Box maxWidth="md" mx="auto">
       <Paper sx={{ p: 4 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          {questionnaire.title}
-          {existingResponse && (
-            <Typography variant="subtitle1" color="text.secondary">
-              Editing existing response
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 3 
+        }}>
+          <Box>
+            <Typography variant="h5" component="h1" gutterBottom>
+              {questionnaire.title}
             </Typography>
-          )}
-        </Typography>
+            {existingResponse && (
+              <Typography variant="subtitle1" color="text.secondary">
+                {existingResponse.status === 'draft' ? 'Editing Draft' : 'Editing Response'}
+              </Typography>
+            )}
+          </Box>
+          <Button
+            variant="outlined"
+            onClick={() => handleSubmit(true)}
+            disabled={submitting || questionnaire.status === 'closed'}
+            startIcon={<Save />}
+          >
+            Save Draft
+          </Button>
+        </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -191,11 +234,34 @@ const Questionnaire = () => {
           </Alert>
         )}
 
-        <Stepper activeStep={activeStep} orientation="vertical">
+        <Stepper nonLinear activeStep={activeStep} orientation="vertical">
           {questionnaire.brands.map((brand, index) => (
-            <Step key={brand._id}>
-              <StepLabel>
-                <Typography variant="h6">{brand.name}</Typography>
+            <Step key={brand._id} completed={isStepComplete(brand._id)}>
+              <StepLabel 
+                error={activeStep === questionnaire.brands.length && !isStepComplete(brand._id)}
+                onClick={() => setActiveStep(index)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    '&:hover': {
+                      color: 'primary.main'
+                    }
+                  }}
+                >
+                  <Typography variant="h6">{brand.name}</Typography>
+                  {!isStepComplete(brand._id) && (
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ ml: 2 }}
+                    >
+                      (Incomplete)
+                    </Typography>
+                  )}
+                </Box>
               </StepLabel>
               <StepContent>
                 {questionnaire.questions.map(question => (
@@ -203,30 +269,36 @@ const Questionnaire = () => {
                     key={question.criterion}
                     criterion={question.criterion}
                     description={question.description}
-                    rating={evaluations[brand._id][question.criterion]?.rating}
+                    rating={evaluations[brand._id][question.criterion]?.rating || null}
                     comment={evaluations[brand._id][question.criterion]?.comment}
                     onChange={(c, field, value) => 
                       handleRatingChange(brand._id, c, field, value)}
                     disabled={questionnaire.status === 'closed'}
                   />
                 ))}
-                <Box sx={{ mb: 2 }}>
+                <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
                   <Button
                     variant="contained"
                     onClick={() => setActiveStep(index + 1)}
-                    sx={{ mt: 1, mr: 1 }}
-                    disabled={!isStepComplete(brand._id)}
+                    sx={{ mt: 1 }}
                   >
                     {index === questionnaire.brands.length - 1 ? 'Finish' : 'Continue'}
                   </Button>
-                  {index > 0 && (
-                    <Button
-                      onClick={() => setActiveStep(index - 1)}
-                      sx={{ mt: 1, mr: 1 }}
-                    >
-                      Back
-                    </Button>
-                  )}
+                  <Button
+                    variant="outlined"
+                    onClick={() => setActiveStep(index - 1)}
+                    sx={{ mt: 1 }}
+                    disabled={index === 0}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setActiveStep(questionnaire.brands.length)}
+                    sx={{ mt: 1 }}
+                  >
+                    Skip to Final Evaluation
+                  </Button>
                 </Box>
               </StepContent>
             </Step>
@@ -238,6 +310,11 @@ const Questionnaire = () => {
             <Typography variant="h6" gutterBottom>
               Final Evaluation
             </Typography>
+            {!canSubmit() && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Please complete all brand evaluations before submitting
+              </Alert>
+            )}
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>Preferred Brand</InputLabel>
               <Select
@@ -274,8 +351,8 @@ const Questionnaire = () => {
               </Button>
               <Button
                 variant="contained"
-                onClick={handleSubmit}
-                disabled={submitting || questionnaire.status === 'closed'}
+                onClick={() => handleSubmit(false)}
+                disabled={submitting || !canSubmit() || questionnaire.status === 'closed'}
               >
                 {submitting ? 'Saving...' : existingResponse ? 'Update Evaluation' : 'Submit Evaluation'}
               </Button>

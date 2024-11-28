@@ -21,7 +21,7 @@ import {
   LockOpen
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { questionnaires } from '../services/api';
+import { questionnaires, responses } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmationDialog from '../components/ConfirmationDialog';
@@ -50,10 +50,29 @@ const Dashboard = () => {
     toDate: null
   });
   const [selectedQuestionnaires, setSelectedQuestionnaires] = useState([]);
+  const [questionnaireResponses, setQuestionnaireResponses] = useState({});
 
   useEffect(() => {
     fetchQuestionnaires();
   }, []);
+
+  useEffect(() => {
+    if (user.role === 'client') {
+      const fetchResponses = async () => {
+        try {
+          const response = await responses.getMyResponses();
+          const responseMap = response.data.reduce((acc, resp) => {
+            acc[resp.questionnaire._id] = resp;
+            return acc;
+          }, {});
+          setQuestionnaireResponses(responseMap);
+        } catch (err) {
+          console.error('Failed to fetch responses:', err);
+        }
+      };
+      fetchResponses();
+    }
+  }, [user.role]);
 
   const fetchQuestionnaires = async () => {
     try {
@@ -244,12 +263,21 @@ const Dashboard = () => {
                   <Typography variant="h6" component="h2">
                     {questionnaire.title}
                   </Typography>
-                  <Chip
-                    label={questionnaire.status}
-                    color={questionnaire.status === 'open' ? 'success' : 'default'}
-                    size="small"
-                    icon={questionnaire.status === 'open' ? <LockOpen /> : <Lock />}
-                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {user.role === 'client' && questionnaireResponses[questionnaire._id] && (
+                      <Chip
+                        label={questionnaireResponses[questionnaire._id].status === 'draft' ? 'Draft' : 'Submitted'}
+                        color={questionnaireResponses[questionnaire._id].status === 'draft' ? 'warning' : 'success'}
+                        size="small"
+                      />
+                    )}
+                    <Chip
+                      label={questionnaire.status}
+                      color={questionnaire.status === 'open' ? 'success' : 'default'}
+                      size="small"
+                      icon={questionnaire.status === 'open' ? <LockOpen /> : <Lock />}
+                    />
+                  </Box>
                 </Box>
                 
                 <Typography color="text.secondary" gutterBottom>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, Link } from 'react-router-dom';
 import {
   AppBar,
   Box,
@@ -53,7 +53,19 @@ const Layout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            component={Link} 
+            to="/dashboard"
+            sx={{ 
+              flexGrow: 1, 
+              color: 'inherit', 
+              textDecoration: 'none',
+              '&:hover': {
+                opacity: 0.8
+              }
+            }}
+          >
             Pastry Tasting Platform
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

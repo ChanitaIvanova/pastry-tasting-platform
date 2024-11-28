@@ -12,8 +12,10 @@ const answerSchema = new mongoose.Schema({
   },
   rating: {
     type: Number,
-    required: true,
-    min: 1,
+    required: function() {
+      return this.parent().parent().status === 'submitted';
+    },
+    min: 0,
     max: 5,
   },
   comments: String,
@@ -35,13 +37,17 @@ const responseSchema = new mongoose.Schema({
     preferredBrand: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Brand',
+      required: function() {
+        return this.parent().parent().status === 'submitted';
+      }
     },
     comments: String,
   },
-  isSubmitted: {
-    type: Boolean,
-    default: false,
-  },
+  status: {
+    type: String,
+    enum: ['draft', 'submitted'],
+    default: 'draft'
+  }
 }, {
   timestamps: true,
 });
