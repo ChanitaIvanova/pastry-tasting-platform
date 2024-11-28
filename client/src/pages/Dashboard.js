@@ -281,6 +281,14 @@ const Dashboard = () => {
                       <Button
                         variant="outlined"
                         size="small"
+                        onClick={() => navigate(`/questionnaires/${questionnaire._id}/details`)}
+                        startIcon={<Assessment />}
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
                         onClick={() => navigate(`/questionnaires/${questionnaire._id}/statistics`)}
                         startIcon={<Assessment />}
                       >

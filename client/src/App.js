@@ -17,6 +17,7 @@ import QuestionnaireForm from './pages/QuestionnaireForm';
 import Statistics from './pages/Statistics';
 import ProtectedRoute from './components/ProtectedRoute';
 import QuestionnaireEdit from './pages/QuestionnaireEdit';
+import QuestionnaireDetails from './pages/QuestionnaireDetails';
 
 function App() {
   return (
@@ -69,6 +70,14 @@ function App() {
                       element={
                         <ProtectedRoute adminOnly>
                           <Statistics />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/questionnaires/:id/details"
+                      element={
+                        <ProtectedRoute adminOnly>
+                          <QuestionnaireDetails />
                         </ProtectedRoute>
                       }
                     />
