@@ -53,21 +53,34 @@ const Layout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography 
-            variant="h6" 
-            component={Link} 
+          <Box
+            component={Link}
             to="/dashboard"
-            sx={{ 
-              flexGrow: 1, 
-              color: 'inherit', 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
               textDecoration: 'none',
+              color: 'inherit',
+              flexGrow: 1,
               '&:hover': {
                 opacity: 0.8
               }
             }}
           >
-            Pastry Tasting Platform
-          </Typography>
+            <Box
+              component="img"
+              src="/logo.jpg"
+              alt="Pastry Tasting Platform"
+              sx={{
+                height: 40,
+                mr: 2,
+                borderRadius: 1
+              }}
+            />
+            <Typography variant="h6">
+              Pastry Tasting Platform
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Person />
             <Typography variant="body2">{user?.username}</Typography>
