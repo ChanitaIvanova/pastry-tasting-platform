@@ -5,7 +5,6 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  TextField,
   Box,
   Typography
 } from '@mui/material';
@@ -13,7 +12,6 @@ import {
 const RatingInput = ({ 
   criterion, 
   rating, 
-  comment, 
   onChange, 
   disabled = false,
   description 
@@ -45,16 +43,6 @@ const RatingInput = ({
           ))}
         </RadioGroup>
       </FormControl>
-      <TextField
-        fullWidth
-        multiline
-        rows={2}
-        label="Comments (optional)"
-        value={comment || ''}
-        onChange={(e) => onChange(criterion, 'comment', e.target.value)}
-        disabled={disabled}
-        sx={{ mt: 1 }}
-      />
     </Box>
   );
 };

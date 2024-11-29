@@ -17,8 +17,16 @@ const answerSchema = new mongoose.Schema({
     },
     min: 0,
     max: 5,
+  }
+});
+
+const brandEvaluationSchema = new mongoose.Schema({
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: true,
   },
-  comments: String,
+  comment: String
 });
 
 const responseSchema = new mongoose.Schema({
@@ -33,6 +41,7 @@ const responseSchema = new mongoose.Schema({
     required: true,
   },
   answers: [answerSchema],
+  brandComments: [brandEvaluationSchema],
   comparativeEvaluation: {
     preferredBrand: {
       type: mongoose.Schema.Types.ObjectId,

@@ -24,6 +24,7 @@ import RatingInput from '../components/RatingInput';
 import { validateResponse } from '../utils/validation';
 import { useNotification } from '../contexts/NotificationContext';
 import { Save } from '@mui/icons-material';
+import BrandComment from '../components/BrandComment';
 
 const Questionnaire = () => {
   const { id } = useParams();
@@ -41,6 +42,8 @@ const Questionnaire = () => {
   const [existingResponse, setExistingResponse] = useState(null);
   const [saveAsDraft, setSaveAsDraft] = useState(false);
   const [loadingResponse, setLoadingResponse] = useState(true);
+  const [brandComments, setBrandComments] = useState({});
+  const [expandedSteps, setExpandedSteps] = useState(new Set());
 
   useEffect(() => {
     fetchQuestionnaire();
@@ -94,7 +97,7 @@ const Questionnaire = () => {
     questionnaire.brands.forEach(brand => {
       evaluationsData[brand._id] = {};
       questionnaire.questions.forEach(question => {
-        evaluationsData[brand._id][question.criterion] = { rating: null, comment: '' };
+        evaluationsData[brand._id][question.criterion] = { rating: null };
       });
     });
 
@@ -103,12 +106,19 @@ const Questionnaire = () => {
         evaluationsData[answer.brand] = {};
       }
       evaluationsData[answer.brand][answer.criterion] = {
-        rating: answer.rating || null,
-        comment: answer.comments || ''
+        rating: answer.rating || null
       };
     });
 
     setEvaluations(evaluationsData);
+    
+    const brandCommentsData = {};
+    if (response.brandComments) {
+      response.brandComments.forEach(comment => {
+        brandCommentsData[comment.brand] = comment.comment;
+      });
+    }
+    setBrandComments(brandCommentsData);
     
     if (response.comparativeEvaluation) {
       if (response.comparativeEvaluation.preferredBrand) {
@@ -147,21 +157,32 @@ const Questionnaire = () => {
 
   const handleSubmit = async (isDraft = false) => {
     const formattedAnswers = [];
+    const formattedBrandComments = [];
+    
     Object.entries(evaluations).forEach(([brandId, criteria]) => {
-      Object.entries(criteria).forEach(([criterion, { rating, comment }]) => {
-        if (rating || comment) {
+      Object.entries(criteria).forEach(([criterion, { rating }]) => {
+        if (rating) {
           formattedAnswers.push({
             brand: brandId,
             criterion,
-            rating: rating || 0,
-            comments: comment
+            rating
           });
         }
       });
     });
 
+    Object.entries(brandComments).forEach(([brandId, comment]) => {
+      if (comment) {
+        formattedBrandComments.push({
+          brand: brandId,
+          comment
+        });
+      }
+    });
+
     const responseData = {
       answers: formattedAnswers,
+      brandComments: formattedBrandComments,
       status: isDraft ? 'draft' : 'submitted'
     };
 
@@ -208,6 +229,18 @@ const Questionnaire = () => {
     }
   };
 
+  const handleStepClick = (index) => {
+    setExpandedSteps(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(index)) {
+        newExpanded.delete(index);
+      } else {
+        newExpanded.add(index);
+      }
+      return newExpanded;
+    });
+  };
+
   if (loading || loadingResponse) return <LoadingSpinner />;
   if (!questionnaire) return <Alert severity="error">Questionnaire not found</Alert>;
 
@@ -251,7 +284,7 @@ const Questionnaire = () => {
             <Step key={brand._id} completed={isStepComplete(brand._id)}>
               <StepLabel 
                 error={activeStep === questionnaire.brands.length && !isStepComplete(brand._id)}
-                onClick={() => setActiveStep(index)}
+                onClick={() => handleStepClick(index)}
                 sx={{ cursor: 'pointer' }}
               >
                 <Box 
@@ -275,30 +308,50 @@ const Questionnaire = () => {
                   )}
                 </Box>
               </StepLabel>
-              <StepContent>
+              <StepContent TransitionProps={{ in: expandedSteps.has(index) }}>
                 {questionnaire.questions.map(question => (
                   <RatingInput
                     key={question.criterion}
                     criterion={question.criterion}
                     description={question.description}
                     rating={evaluations[brand._id][question.criterion]?.rating || null}
-                    comment={evaluations[brand._id][question.criterion]?.comment}
                     onChange={(c, field, value) => 
                       handleRatingChange(brand._id, c, field, value)}
                     disabled={questionnaire.status === 'closed'}
                   />
                 ))}
+                <BrandComment
+                  brandName={brand.name}
+                  comment={brandComments[brand._id]}
+                  onChange={(value) => setBrandComments(prev => ({
+                    ...prev,
+                    [brand._id]: value
+                  }))}
+                  disabled={questionnaire.status === 'closed'}
+                />
                 <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
                   <Button
                     variant="contained"
-                    onClick={() => setActiveStep(index + 1)}
+                    onClick={() => {
+                      setActiveStep(index + 1);
+                      handleStepClick(index); // Collapse current step
+                      if (index < questionnaire.brands.length - 1) {
+                        handleStepClick(index + 1); // Expand next step
+                      }
+                    }}
                     sx={{ mt: 1 }}
                   >
                     {index === questionnaire.brands.length - 1 ? 'Finish' : 'Continue'}
                   </Button>
                   <Button
                     variant="outlined"
-                    onClick={() => setActiveStep(index - 1)}
+                    onClick={() => {
+                      setActiveStep(index - 1);
+                      handleStepClick(index); // Collapse current step
+                      if (index > 0) {
+                        handleStepClick(index - 1); // Expand previous step
+                      }
+                    }}
                     sx={{ mt: 1 }}
                     disabled={index === 0}
                   >
@@ -306,7 +359,10 @@ const Questionnaire = () => {
                   </Button>
                   <Button
                     variant="outlined"
-                    onClick={() => setActiveStep(questionnaire.brands.length)}
+                    onClick={() => {
+                      setActiveStep(questionnaire.brands.length);
+                      handleStepClick(index); // Collapse current step
+                    }}
                     sx={{ mt: 1 }}
                   >
                     Skip to Final Evaluation
