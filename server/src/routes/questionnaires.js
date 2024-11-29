@@ -100,4 +100,27 @@ router.patch('/:id/close', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// Duplicate questionnaire (Admin only)
+router.post('/:id/duplicate', [auth, isAdmin], async (req, res) => {
+  try {
+    const originalQuestionnaire = await Questionnaire.findById(req.params.id);
+    if (!originalQuestionnaire) {
+      return res.status(404).json({ message: 'Questionnaire not found' });
+    }
+
+    const duplicatedQuestionnaire = new Questionnaire({
+      title: `${originalQuestionnaire.title} (Copy)`,
+      brands: originalQuestionnaire.brands,
+      questions: originalQuestionnaire.questions,
+      createdBy: req.user._id,
+      status: 'open'
+    });
+
+    await duplicatedQuestionnaire.save();
+    res.status(201).json(duplicatedQuestionnaire);
+  } catch (error) {
+    res.status(500).json({ message: 'Error duplicating questionnaire', error: error.message });
+  }
+});
+
 module.exports = router; 

@@ -27,7 +27,8 @@ export const questionnaires = {
   create: (data) => api.post('/questionnaires', data),
   update: (id, data) => api.put(`/questionnaires/${id}`, data),
   close: (id) => api.patch(`/questionnaires/${id}/close`),
-  delete: (id) => api.delete(`/questionnaires/${id}`)
+  delete: (id) => api.delete(`/questionnaires/${id}`),
+  duplicate: (id) => api.post(`/questionnaires/${id}/duplicate`)
 };
 
 export const responses = {

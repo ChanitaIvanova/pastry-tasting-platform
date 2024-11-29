@@ -42,6 +42,7 @@ const QuestionnaireEdit = () => {
     criterion: '',
     description: ''
   });
+  const [title, setTitle] = useState('');
 
   useEffect(() => {
     fetchQuestionnaire();
@@ -51,6 +52,7 @@ const QuestionnaireEdit = () => {
     try {
       const response = await questionnaires.getOne(id);
       setQuestionnaire(response.data);
+      setTitle(response.data.title);
     } catch (err) {
       setError('Failed to fetch questionnaire');
     } finally {
@@ -94,7 +96,10 @@ const QuestionnaireEdit = () => {
 
   const handleSave = async () => {
     try {
-      await questionnaires.update(id, questionnaire);
+      await questionnaires.update(id, {
+        ...questionnaire,
+        title: title.trim()
+      });
       showNotification('Questionnaire updated successfully', 'success');
       navigate('/dashboard');
     } catch (err) {
@@ -113,7 +118,7 @@ const QuestionnaireEdit = () => {
     <Box maxWidth="md" mx="auto">
       <Paper sx={{ p: 4 }}>
         <Typography variant="h5" component="h1" gutterBottom>
-          Edit Questionnaire: {questionnaire.title}
+          Edit Questionnaire
         </Typography>
 
         {error && (
@@ -121,6 +126,16 @@ const QuestionnaireEdit = () => {
             {error}
           </Alert>
         )}
+
+        <TextField
+          fullWidth
+          label="Questionnaire Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          margin="normal"
+          required
+          sx={{ mb: 3 }}
+        />
 
         <Tabs
           value={activeTab}

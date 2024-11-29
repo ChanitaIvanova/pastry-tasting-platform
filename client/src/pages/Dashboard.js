@@ -27,7 +27,8 @@ import {
   Edit as EditIcon,
   Assessment as AssessmentIcon,
   Close as CloseIcon,
-  Visibility as VisibilityIcon
+  Visibility as VisibilityIcon,
+  ContentCopy as ContentCopyIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { questionnaires, responses } from '../services/api';
@@ -222,6 +223,17 @@ const Dashboard = () => {
     setSelectedQuestionnaireId(null);
   };
 
+  const handleDuplicate = async (questionnaireId) => {
+    try {
+      await questionnaires.duplicate(questionnaireId);
+      showNotification('Questionnaire duplicated successfully', 'success');
+      fetchQuestionnaires();
+      handleCloseActionMenu();
+    } catch (err) {
+      showNotification('Failed to duplicate questionnaire', 'error');
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -346,6 +358,14 @@ const Dashboard = () => {
                     <EditIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>Edit</ListItemText>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleDuplicate(questionnaire._id)}
+                >
+                  <ListItemIcon>
+                    <ContentCopyIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Duplicate</ListItemText>
                 </MenuItem>
                 <MenuItem 
                   onClick={() => {

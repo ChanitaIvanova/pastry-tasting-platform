@@ -35,6 +35,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { exportToExcel, formatQuestionnaireData } from '../utils/export';
 import AdvancedAnalytics from '../components/AdvancedAnalytics';
+import { useNotification } from '../contexts/NotificationContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -44,6 +45,7 @@ const Statistics = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     fetchData();
