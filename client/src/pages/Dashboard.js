@@ -11,14 +11,23 @@ import {
   Alert,
   IconButton,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Add as AddIcon,
   Assessment,
   Edit,
   Lock,
-  LockOpen
+  LockOpen,
+  MoreVert as MoreVertIcon,
+  Edit as EditIcon,
+  Assessment as AssessmentIcon,
+  Close as CloseIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { questionnaires, responses } from '../services/api';
@@ -51,6 +60,8 @@ const Dashboard = () => {
   });
   const [selectedQuestionnaires, setSelectedQuestionnaires] = useState([]);
   const [questionnaireResponses, setQuestionnaireResponses] = useState({});
+  const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
+  const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState(null);
 
   useEffect(() => {
     fetchQuestionnaires();
@@ -200,6 +211,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleOpenActionMenu = (event, questionnaireId) => {
+    event.stopPropagation();
+    setActionMenuAnchor(event.currentTarget);
+    setSelectedQuestionnaireId(questionnaireId);
+  };
+
+  const handleCloseActionMenu = () => {
+    setActionMenuAnchor(null);
+    setSelectedQuestionnaireId(null);
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -244,19 +266,29 @@ const Dashboard = () => {
       <Grid container spacing={3}>
         {paginatedQuestionnaires.map((questionnaire) => (
           <Grid item xs={12} md={6} lg={4} key={questionnaire._id}>
-            <Card>
+            <Card sx={{ position: 'relative' }}>
               {user.role === 'admin' && (
-                <Box sx={{ p: 1 }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={selectedQuestionnaires.includes(questionnaire._id)}
-                        onChange={() => handleSelectQuestionnaire(questionnaire._id)}
-                      />
-                    }
-                    label="Select"
-                  />
-                </Box>
+                <>
+                  <Box sx={{ p: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={selectedQuestionnaires.includes(questionnaire._id)}
+                          onChange={() => handleSelectQuestionnaire(questionnaire._id)}
+                        />
+                      }
+                      label="Select"
+                    />
+                  </Box>
+                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleOpenActionMenu(e, questionnaire._id)}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Box>
+                </>
               )}
               <CardContent>
                 <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -284,8 +316,8 @@ const Dashboard = () => {
                   Brands: {questionnaire.brands.length}
                 </Typography>
 
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  {user.role === 'client' && (
+                {user.role === 'client' && (
+                  <Box sx={{ mt: 2 }}>
                     <Button
                       variant="outlined"
                       size="small"
@@ -294,49 +326,64 @@ const Dashboard = () => {
                     >
                       Evaluate
                     </Button>
-                  )}
-                  
-                  {user.role === 'admin' && (
-                    <>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => navigate(`/questionnaires/${questionnaire._id}/edit`)}
-                        startIcon={<Edit />}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => navigate(`/questionnaires/${questionnaire._id}/details`)}
-                        startIcon={<Assessment />}
-                      >
-                        View Details
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => navigate(`/questionnaires/${questionnaire._id}/statistics`)}
-                        startIcon={<Assessment />}
-                      >
-                        Statistics
-                      </Button>
-                      {questionnaire.status === 'open' && (
-                        <Button
-                          variant="outlined"
-                          color="secondary"
-                          size="small"
-                          onClick={() => handleCloseQuestionnaire(questionnaire._id)}
-                        >
-                          Close
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </Box>
+                  </Box>
+                )}
               </CardContent>
             </Card>
+            {user.role === 'admin' && (
+              <Menu
+                anchorEl={actionMenuAnchor}
+                open={Boolean(actionMenuAnchor) && selectedQuestionnaireId === questionnaire._id}
+                onClose={handleCloseActionMenu}
+              >
+                <MenuItem 
+                  onClick={() => {
+                    navigate(`/questionnaires/${questionnaire._id}/edit`);
+                    handleCloseActionMenu();
+                  }}
+                >
+                  <ListItemIcon>
+                    <EditIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Edit</ListItemText>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => {
+                    navigate(`/questionnaires/${questionnaire._id}/details`);
+                    handleCloseActionMenu();
+                  }}
+                >
+                  <ListItemIcon>
+                    <VisibilityIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>View Details</ListItemText>
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => {
+                    navigate(`/questionnaires/${questionnaire._id}/statistics`);
+                    handleCloseActionMenu();
+                  }}
+                >
+                  <ListItemIcon>
+                    <AssessmentIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Statistics</ListItemText>
+                </MenuItem>
+                {questionnaire.status === 'open' && (
+                  <MenuItem 
+                    onClick={() => {
+                      handleCloseQuestionnaire(questionnaire._id);
+                      handleCloseActionMenu();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <CloseIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Close</ListItemText>
+                  </MenuItem>
+                )}
+              </Menu>
+            )}
           </Grid>
         ))}
       </Grid>
