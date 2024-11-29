@@ -123,4 +123,24 @@ router.post('/:id/duplicate', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// Delete questionnaire (Admin only)
+router.delete('/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const questionnaire = await Questionnaire.findById(req.params.id);
+    if (!questionnaire) {
+      return res.status(404).json({ message: 'Questionnaire not found' });
+    }
+
+    // Delete all responses associated with this questionnaire
+    await Response.deleteMany({ questionnaire: questionnaire._id });
+
+    // Delete the questionnaire
+    await Questionnaire.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Questionnaire deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting questionnaire', error: error.message });
+  }
+});
+
 module.exports = router; 

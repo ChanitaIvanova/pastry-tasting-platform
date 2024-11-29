@@ -15,7 +15,8 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -28,7 +29,8 @@ import {
   Assessment as AssessmentIcon,
   Close as CloseIcon,
   Visibility as VisibilityIcon,
-  ContentCopy as ContentCopyIcon
+  ContentCopy as ContentCopyIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { questionnaires, responses } from '../services/api';
@@ -38,7 +40,6 @@ import ConfirmationDialog from '../components/ConfirmationDialog';
 import TablePagination from '../components/TablePagination';
 import SearchFilters from '../components/SearchFilters';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
-import BatchOperations from '../components/BatchOperations';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ const Dashboard = () => {
   const { showNotification } = useNotification();
   const [confirmDialog, setConfirmDialog] = useState({
     open: false,
-    questionnaireId: null
+    questionnaireId: null,
+    action: null
   });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);
@@ -59,7 +61,6 @@ const Dashboard = () => {
     fromDate: null,
     toDate: null
   });
-  const [selectedQuestionnaires, setSelectedQuestionnaires] = useState([]);
   const [questionnaireResponses, setQuestionnaireResponses] = useState({});
   const [actionMenuAnchor, setActionMenuAnchor] = useState(null);
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState(null);
@@ -100,7 +101,8 @@ const Dashboard = () => {
   const handleCloseQuestionnaire = async (id) => {
     setConfirmDialog({
       open: true,
-      questionnaireId: id
+      questionnaireId: id,
+      action: 'close'
     });
   };
 
@@ -113,7 +115,7 @@ const Dashboard = () => {
       setError('Failed to close questionnaire');
       showNotification('Failed to close questionnaire', 'error');
     } finally {
-      setConfirmDialog({ open: false, questionnaireId: null });
+      setConfirmDialog({ open: false, questionnaireId: null, action: null });
     }
   };
 
@@ -161,57 +163,6 @@ const Dashboard = () => {
   const paginatedQuestionnaires = filteredQuestionnaires
     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  const handleSelectQuestionnaire = (questionnaireId) => {
-    setSelectedQuestionnaires(prev => {
-      if (prev.includes(questionnaireId)) {
-        return prev.filter(id => id !== questionnaireId);
-      }
-      return [...prev, questionnaireId];
-    });
-  };
-
-  const handleSelectAll = (event) => {
-    if (event.target.checked) {
-      setSelectedQuestionnaires(filteredQuestionnaires.map(q => q._id));
-    } else {
-      setSelectedQuestionnaires([]);
-    }
-  };
-
-  const handleBatchClose = async () => {
-    try {
-      await Promise.all(
-        selectedQuestionnaires.map(id => questionnaires.close(id))
-      );
-      showNotification('Selected questionnaires closed successfully', 'success');
-      fetchQuestionnaires();
-      setSelectedQuestionnaires([]);
-    } catch (err) {
-      showNotification('Failed to close selected questionnaires', 'error');
-    }
-  };
-
-  const handleBatchExport = () => {
-    const selectedData = filteredQuestionnaires.filter(q => 
-      selectedQuestionnaires.includes(q._id)
-    );
-    exportToExcel(selectedData, 'questionnaires-export');
-    showNotification('Data exported successfully', 'success');
-  };
-
-  const handleBatchDelete = async () => {
-    try {
-      await Promise.all(
-        selectedQuestionnaires.map(id => questionnaires.delete(id))
-      );
-      showNotification('Selected questionnaires deleted successfully', 'success');
-      fetchQuestionnaires();
-      setSelectedQuestionnaires([]);
-    } catch (err) {
-      showNotification('Failed to delete selected questionnaires', 'error');
-    }
-  };
-
   const handleOpenActionMenu = (event, questionnaireId) => {
     event.stopPropagation();
     setActionMenuAnchor(event.currentTarget);
@@ -231,6 +182,18 @@ const Dashboard = () => {
       handleCloseActionMenu();
     } catch (err) {
       showNotification('Failed to duplicate questionnaire', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await questionnaires.delete(confirmDialog.questionnaireId);
+      showNotification('Questionnaire deleted successfully', 'success');
+      fetchQuestionnaires();
+      setConfirmDialog({ open: false, questionnaireId: null, action: null });
+    } catch (err) {
+      showNotification('Failed to delete questionnaire', 'error');
+      setConfirmDialog({ open: false, questionnaireId: null, action: null });
     }
   };
 
@@ -264,50 +227,40 @@ const Dashboard = () => {
         </Alert>
       )}
 
-      {user.role === 'admin' && selectedQuestionnaires.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <BatchOperations
-            selectedItems={selectedQuestionnaires}
-            onCloseQuestionnaires={handleBatchClose}
-            onExport={handleBatchExport}
-            onDelete={handleBatchDelete}
-          />
-        </Box>
-      )}
-
       <Grid container spacing={3}>
         {paginatedQuestionnaires.map((questionnaire) => (
           <Grid item xs={12} md={6} lg={4} key={questionnaire._id}>
             <Card sx={{ position: 'relative' }}>
-              {user.role === 'admin' && (
-                <>
-                  <Box sx={{ p: 1 }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={selectedQuestionnaires.includes(questionnaire._id)}
-                          onChange={() => handleSelectQuestionnaire(questionnaire._id)}
-                        />
-                      }
-                      label="Select"
-                    />
-                  </Box>
-                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleOpenActionMenu(e, questionnaire._id)}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </Box>
-                </>
-              )}
               <CardContent>
-                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6" component="h2">
-                    {questionnaire.title}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 2
+                }}>
+                  {/* Title */}
+                  <Tooltip title={questionnaire.title} placement="top">
+                    <Typography 
+                      variant="h6" 
+                      component="h2"
+                      sx={{ 
+                        flex: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {questionnaire.title}
+                    </Typography>
+                  </Tooltip>
+
+                  {/* Badges and Menu */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 1,
+                    flexShrink: 0
+                  }}>
                     {user.role === 'client' && questionnaireResponses[questionnaire._id] && (
                       <Chip
                         label={questionnaireResponses[questionnaire._id].status === 'draft' ? 'Draft' : 'Submitted'}
@@ -321,25 +274,36 @@ const Dashboard = () => {
                       size="small"
                       icon={questionnaire.status === 'open' ? <LockOpen /> : <Lock />}
                     />
+                    {user.role === 'admin' && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleOpenActionMenu(e, questionnaire._id)}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    )}
                   </Box>
                 </Box>
-                
-                <Typography color="text.secondary" gutterBottom>
-                  Brands: {questionnaire.brands.length}
-                </Typography>
 
-                {user.role === 'client' && (
-                  <Box sx={{ mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => navigate(`/questionnaires/${questionnaire._id}`)}
-                      startIcon={<Edit />}
-                    >
-                      Evaluate
-                    </Button>
-                  </Box>
-                )}
+                {/* Rest of the content */}
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography color="text.secondary">
+                    Brands: {questionnaire.brands.length}
+                  </Typography>
+
+                  {user.role === 'client' && (
+                    <Box>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => navigate(`/questionnaires/${questionnaire._id}`)}
+                        startIcon={<Edit />}
+                      >
+                        Evaluate
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
               </CardContent>
             </Card>
             {user.role === 'admin' && (
@@ -402,6 +366,22 @@ const Dashboard = () => {
                     <ListItemText>Close</ListItemText>
                   </MenuItem>
                 )}
+                <MenuItem 
+                  onClick={() => {
+                    setConfirmDialog({
+                      open: true,
+                      questionnaireId: questionnaire._id,
+                      action: 'delete'
+                    });
+                    handleCloseActionMenu();
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteIcon fontSize="small" color="error" />
+                  </ListItemIcon>
+                  <ListItemText>Delete</ListItemText>
+                </MenuItem>
               </Menu>
             )}
           </Grid>
@@ -432,11 +412,16 @@ const Dashboard = () => {
 
       <ConfirmationDialog
         open={confirmDialog.open}
-        title="Close Questionnaire"
-        message="Are you sure you want to close this questionnaire? This action cannot be undone."
-        onConfirm={handleConfirmClose}
-        onCancel={() => setConfirmDialog({ open: false, questionnaireId: null })}
-        confirmText="Close Questionnaire"
+        title={confirmDialog.action === 'delete' ? "Delete Questionnaire" : "Close Questionnaire"}
+        message={
+          confirmDialog.action === 'delete' 
+            ? "Are you sure you want to delete this questionnaire? This action cannot be undone."
+            : "Are you sure you want to close this questionnaire? This action cannot be undone."
+        }
+        onConfirm={confirmDialog.action === 'delete' ? handleDelete : handleConfirmClose}
+        onCancel={() => setConfirmDialog({ open: false, questionnaireId: null, action: null })}
+        confirmText={confirmDialog.action === 'delete' ? "Delete" : "Close"}
+        severity={confirmDialog.action === 'delete' ? "error" : "warning"}
       />
     </Box>
   );
