@@ -36,7 +36,7 @@ const RatingInput = ({
             <FormControlLabel
               key={value}
               value={value}
-              control={<Radio />}
+              control={<Radio sx={{ p: 0.5 }}/>}
               label={value}
               disabled={disabled}
             />
