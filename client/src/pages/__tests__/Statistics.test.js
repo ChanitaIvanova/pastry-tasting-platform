@@ -23,17 +23,17 @@ const mockStatistics = {
   totalResponses: 2,
   brandRatings: {
     brand1: {
-      averageScore: 4.5,
+      averageScore: 9,
       criteriaScores: {
-        appearance: 4,
-        flavor: 5
+        appearance: 8,
+        flavor: 10
       }
     },
     brand2: {
-      averageScore: 3.5,
+      averageScore: 7,
       criteriaScores: {
-        appearance: 3,
-        flavor: 4
+        appearance: 6,
+        flavor: 8
       }
     }
   },
@@ -92,8 +92,8 @@ describe('Statistics', () => {
     await waitFor(() => {
       expect(screen.getByText('Brand 1')).toBeInTheDocument();
       expect(screen.getByText('Brand 2')).toBeInTheDocument();
-      expect(screen.getByText('4.50')).toBeInTheDocument();
-      expect(screen.getByText('3.50')).toBeInTheDocument();
+      expect(screen.getByText('9.00')).toBeInTheDocument();
+      expect(screen.getByText('7.00')).toBeInTheDocument();
     });
   });
 }); 

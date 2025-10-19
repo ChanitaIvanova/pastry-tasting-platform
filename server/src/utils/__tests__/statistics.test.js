@@ -7,25 +7,25 @@ describe('Statistics Utility', () => {
         {
           brand: 'brand1',
           criterion: 'appearance',
-          rating: 4,
+          rating: 8,
           comments: 'Good'
         },
         {
           brand: 'brand1',
           criterion: 'flavor',
-          rating: 5,
+          rating: 10,
           comments: 'Excellent'
         },
         {
           brand: 'brand2',
           criterion: 'appearance',
-          rating: 3,
+          rating: 6,
           comments: 'Average'
         },
         {
           brand: 'brand2',
           criterion: 'flavor',
-          rating: 4,
+          rating: 8,
           comments: 'Good'
         }
       ],
@@ -39,25 +39,25 @@ describe('Statistics Utility', () => {
         {
           brand: 'brand1',
           criterion: 'appearance',
-          rating: 5,
+          rating: 10,
           comments: 'Perfect'
         },
         {
           brand: 'brand1',
           criterion: 'flavor',
-          rating: 4,
+          rating: 8,
           comments: 'Good'
         },
         {
           brand: 'brand2',
           criterion: 'appearance',
-          rating: 4,
+          rating: 8,
           comments: 'Good'
         },
         {
           brand: 'brand2',
           criterion: 'flavor',
-          rating: 3,
+          rating: 6,
           comments: 'Average'
         }
       ],
@@ -76,10 +76,10 @@ describe('Statistics Utility', () => {
   it('calculates criteria averages correctly', () => {
     const stats = calculateStatistics(mockResponses);
     
-    expect(stats.brandRatings.brand1.criteriaScores.appearance).toBe(4.5);
-    expect(stats.brandRatings.brand1.criteriaScores.flavor).toBe(4.5);
-    expect(stats.brandRatings.brand2.criteriaScores.appearance).toBe(3.5);
-    expect(stats.brandRatings.brand2.criteriaScores.flavor).toBe(3.5);
+    expect(stats.brandRatings.brand1.criteriaScores.appearance).toBe(9);
+    expect(stats.brandRatings.brand1.criteriaScores.flavor).toBe(9);
+    expect(stats.brandRatings.brand2.criteriaScores.appearance).toBe(7);
+    expect(stats.brandRatings.brand2.criteriaScores.flavor).toBe(7);
   });
 
   it('calculates brand preferences correctly', () => {
@@ -92,8 +92,8 @@ describe('Statistics Utility', () => {
   it('calculates overall brand ratings correctly', () => {
     const stats = calculateStatistics(mockResponses);
     
-    expect(stats.brandRatings.brand1.averageScore).toBe(4.5);
-    expect(stats.brandRatings.brand2.averageScore).toBe(3.5);
+    expect(stats.brandRatings.brand1.averageScore).toBe(9);
+    expect(stats.brandRatings.brand2.averageScore).toBe(7);
   });
 
   it('handles empty responses array', () => {
@@ -111,7 +111,7 @@ describe('Statistics Utility', () => {
           {
             brand: 'brand1',
             criterion: 'appearance',
-            rating: 4
+            rating: 8
           }
         ],
         comparativeEvaluation: {
@@ -121,7 +121,7 @@ describe('Statistics Utility', () => {
     ];
 
     const stats = calculateStatistics(incompleteResponses);
-    expect(stats.brandRatings.brand1.criteriaScores.appearance).toBe(4);
+    expect(stats.brandRatings.brand1.criteriaScores.appearance).toBe(8);
     expect(stats.brandRatings.brand1.criteriaScores.flavor).toBeUndefined();
   });
 }); 

@@ -83,7 +83,7 @@ const UserResponse = ({ response, questionnaire }) => {
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
-                        <YAxis domain={[0, 5]} />
+                        <YAxis domain={[0, 10]} />
                         <Tooltip />
                         <Bar dataKey="rating" fill="#8884d8" name="Rating" />
                       </BarChart>

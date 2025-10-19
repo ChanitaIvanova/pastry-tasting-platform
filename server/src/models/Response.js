@@ -15,8 +15,8 @@ const answerSchema = new mongoose.Schema({
     required: function() {
       return this.parent().parent().status === 'submitted';
     },
-    min: 0,
-    max: 5,
+    min: 1,
+    max: 10,
   }
 });
 

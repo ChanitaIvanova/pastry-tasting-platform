@@ -10,6 +10,7 @@ const errorHandler = require('./middleware/errorHandler');
 const http = require('http');
 const { initializeSocket } = require('./services/socket');
 const activityLogsRoutes = require('./routes/activityLogs');
+const runMigrations = require('./migrations');
 
 const app = express();
 
@@ -27,19 +28,37 @@ app.use('/api/activity-logs', activityLogsRoutes);
 // Error handling middleware should be last
 app.use(errorHandler);
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+async function startServer() {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is not defined');
+    }
 
-const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
-initializeSocket(server);
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB');
 
-module.exports = app; 
+    await runMigrations();
+
+    const PORT = process.env.PORT || 5000;
+    const server = http.createServer(app);
+    initializeSocket(server);
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    return server;
+  } catch (error) {
+    console.error('Error starting server:', error);
+    throw error;
+  }
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+
+module.exports = app;
+module.exports.startServer = startServer;

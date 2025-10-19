@@ -60,22 +60,23 @@ const AdvancedAnalytics = ({ statistics, questionnaire }) => {
 
   const calculateDistribution = () => {
     const distribution = {};
+    const distributionKeys = ['1-2', '3-4', '5-6', '7-8', '9-10'];
+
     Object.values(statistics.brandRatings).forEach(brandRating => {
       Object.entries(brandRating.criteriaScores).forEach(([criterion, score]) => {
         if (!distribution[criterion]) {
-          distribution[criterion] = {
-            name: criterion,
-            '1-2': 0,
-            '2-3': 0,
-            '3-4': 0,
-            '4-5': 0
-          };
+          distribution[criterion] = distributionKeys.reduce((acc, key) => ({
+            ...acc,
+            [key]: 0
+          }), { name: criterion });
         }
-        const bracket = Math.floor(score);
-        const key = `${bracket}-${bracket + 1}`;
+
+        const bracketIndex = Math.max(0, Math.min(distributionKeys.length - 1, Math.floor((score - 1) / 2)));
+        const key = distributionKeys[bracketIndex];
         distribution[criterion][key]++;
       });
     });
+
     return Object.values(distribution);
   };
 
@@ -91,7 +92,7 @@ const AdvancedAnalytics = ({ statistics, questionnaire }) => {
               <RadarChart data={formatRadarData()}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="brand" />
-                <PolarRadiusAxis angle={30} domain={[0, 5]} />
+                <PolarRadiusAxis angle={30} domain={[0, 10]} />
                 {questionnaire.brands.map((brand, index) => (
                   <Radar
                     key={brand._id}
@@ -117,7 +118,7 @@ const AdvancedAnalytics = ({ statistics, questionnaire }) => {
               <LineChart>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" />
-                <YAxis domain={[0, 5]} />
+                <YAxis domain={[0, 10]} />
                 <Tooltip />
                 <Legend />
                 {calculateTrends().map((brand, index) => (
@@ -148,9 +149,10 @@ const AdvancedAnalytics = ({ statistics, questionnaire }) => {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="1-2" stackId="a" fill="#ff8042" />
-                <Bar dataKey="2-3" stackId="a" fill="#ffbb28" />
-                <Bar dataKey="3-4" stackId="a" fill="#00c49f" />
-                <Bar dataKey="4-5" stackId="a" fill="#0088fe" />
+                <Bar dataKey="3-4" stackId="a" fill="#ffbb28" />
+                <Bar dataKey="5-6" stackId="a" fill="#00c49f" />
+                <Bar dataKey="7-8" stackId="a" fill="#0088fe" />
+                <Bar dataKey="9-10" stackId="a" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
           </Paper>

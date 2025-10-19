@@ -10,7 +10,7 @@ const validateResponse = [
   body('answers').isArray().notEmpty(),
   body('answers.*.brand').isMongoId(),
   body('answers.*.criterion').isString().trim().notEmpty(),
-  body('answers.*.rating').isInt({ min: 1, max: 5 }),
+  body('answers.*.rating').isInt({ min: 1, max: 10 }),
   body('comparativeEvaluation.preferredBrand').optional().isMongoId(),
   body('comparativeEvaluation.comments').optional().trim()
 ];

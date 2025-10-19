@@ -33,25 +33,25 @@ describe('AdvancedAnalytics', () => {
   const mockStatistics = {
     brandRatings: {
       brand1: {
-        averageScore: 4.5,
+        averageScore: 9,
         criteriaScores: {
-          appearance: 4.2,
-          aroma: 4.5,
-          texture: 4.3,
-          flavor: 4.7,
-          aftertaste: 4.4,
-          overall: 4.5
+          appearance: 8.4,
+          aroma: 9,
+          texture: 8.6,
+          flavor: 9.4,
+          aftertaste: 8.8,
+          overall: 9
         }
       },
       brand2: {
-        averageScore: 4.0,
+        averageScore: 8,
         criteriaScores: {
-          appearance: 3.8,
-          aroma: 4.1,
-          texture: 3.9,
-          flavor: 4.2,
-          aftertaste: 3.9,
-          overall: 4.0
+          appearance: 7.6,
+          aroma: 8.2,
+          texture: 7.8,
+          flavor: 8.4,
+          aftertaste: 7.8,
+          overall: 8
         }
       }
     }

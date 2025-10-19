@@ -30,7 +30,7 @@ describe('Response Integration Tests', () => {
         answers: testQuestionnaire.brands.map(brand => ({
           brand: brand._id,
           criterion: 'appearance',
-          rating: 4,
+          rating: 8,
           comments: `Good appearance for ${brand.name}`
         })),
         comparativeEvaluation: {
@@ -54,7 +54,7 @@ describe('Response Integration Tests', () => {
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'appearance',
-            rating: 4
+            rating: 8
           }
         ],
         comparativeEvaluation: {
@@ -99,7 +99,7 @@ describe('Response Integration Tests', () => {
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'appearance',
-            rating: 4
+            rating: 8
           }
         ],
         comparativeEvaluation: {

@@ -17,9 +17,9 @@ jest.mock('recharts', () => ({
 
 describe('StatisticsChart', () => {
   const mockData = [
-    { name: 'Appearance', rating: 4.5 },
-    { name: 'Flavor', rating: 4.2 },
-    { name: 'Texture', rating: 3.8 }
+    { name: 'Appearance', rating: 9 },
+    { name: 'Flavor', rating: 8.4 },
+    { name: 'Texture', rating: 7.6 }
   ];
 
   it('renders chart title correctly', () => {

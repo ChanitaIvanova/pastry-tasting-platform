@@ -41,13 +41,13 @@ describe('Response Model', () => {
         {
           brand: testQuestionnaire.brands[0]._id,
           criterion: 'appearance',
-          rating: 4,
+          rating: 8,
           comments: 'Good appearance'
         },
         {
           brand: testQuestionnaire.brands[0]._id,
           criterion: 'flavor',
-          rating: 5,
+          rating: 10,
           comments: 'Excellent flavor'
         }
       ],
@@ -70,7 +70,7 @@ describe('Response Model', () => {
         {
           brand: testQuestionnaire.brands[0]._id,
           criterion: 'appearance',
-          rating: 6,
+          rating: 11,
           comments: 'Invalid rating'
         }
       ],
@@ -98,7 +98,7 @@ describe('Response Model', () => {
         {
           brand: testQuestionnaire.brands[0]._id,
           criterion: 'appearance',
-          rating: 4
+          rating: 8
         }
       ],
       comparativeEvaluation: {
@@ -125,7 +125,7 @@ describe('Response Model', () => {
         {
           brand: testQuestionnaire.brands[0]._id,
           criterion: 'invalid-criterion',
-          rating: 4
+          rating: 8
         }
       ],
       comparativeEvaluation: {
