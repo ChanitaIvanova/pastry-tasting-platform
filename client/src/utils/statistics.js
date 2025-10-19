@@ -37,21 +37,20 @@ export const formatPreferenceData = (brandPreferences, questionnaire) => {
 
 export const formatDistributionData = (brandRatings) => {
   const distribution = {};
+  const distributionKeys = ['1-2', '3-4', '5-6', '7-8', '9-10'];
+
   Object.values(brandRatings).forEach(brandRating => {
     Object.entries(brandRating.criteriaScores).forEach(([criterion, score]) => {
       if (!distribution[criterion]) {
-        distribution[criterion] = {
-          name: criterion,
-          '1-2': 0,
-          '2-3': 0,
-          '3-4': 0,
-          '4-5': 0
-        };
+        distribution[criterion] = distributionKeys.reduce((acc, key) => ({
+          ...acc,
+          [key]: 0
+        }), { name: criterion });
       }
-      const bracket = Math.floor(score);
-      const key = `${bracket}-${bracket + 1}`;
+      const bracketIndex = Math.max(0, Math.min(distributionKeys.length - 1, Math.floor((score - 1) / 2)));
+      const key = distributionKeys[bracketIndex];
       distribution[criterion][key]++;
     });
   });
   return Object.values(distribution);
-}; 
+};

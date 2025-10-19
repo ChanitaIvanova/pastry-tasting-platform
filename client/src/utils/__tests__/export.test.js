@@ -25,17 +25,17 @@ describe('Export Utilities', () => {
     totalResponses: 10,
     brandRatings: {
       brand1: {
-        averageScore: 4.5,
+        averageScore: 9,
         criteriaScores: {
-          appearance: 4.2,
-          flavor: 4.8
+          appearance: 8.4,
+          flavor: 9.6
         }
       },
       brand2: {
-        averageScore: 3.8,
+        averageScore: 7.6,
         criteriaScores: {
-          appearance: 3.5,
-          flavor: 4.1
+          appearance: 7,
+          flavor: 8.2
         }
       }
     },
@@ -58,7 +58,7 @@ describe('Export Utilities', () => {
     const brandData = formattedData.filter(row => row.Brand);
     expect(brandData).toHaveLength(2);
     expect(brandData[0].Brand).toBe('Brand 1');
-    expect(brandData[0]['Average Rating']).toBe(4.5);
+    expect(brandData[0]['Average Rating']).toBe(9);
     expect(brandData[0]['Times Preferred']).toBe(6);
   });
 

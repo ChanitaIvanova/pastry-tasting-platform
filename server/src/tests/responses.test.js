@@ -35,13 +35,13 @@ describe('Response API', () => {
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'appearance',
-            rating: 4,
+            rating: 8,
             comments: 'Good appearance'
           },
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'flavor',
-            rating: 5,
+            rating: 10,
             comments: 'Excellent flavor'
           }
         ],
@@ -83,12 +83,12 @@ describe('Response API', () => {
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'appearance',
-            rating: 4
+            rating: 8
           },
           {
             brand: testQuestionnaire.brands[0]._id,
             criterion: 'flavor',
-            rating: 5
+            rating: 10
           }
         ],
         comparativeEvaluation: {

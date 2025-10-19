@@ -43,8 +43,8 @@ describe('Validation Utilities', () => {
     it('should validate a valid response', () => {
       const validResponse = {
         answers: [
-          { rating: 4, criterion: 'appearance' },
-          { rating: 5, criterion: 'flavor' }
+          { rating: 8, criterion: 'appearance' },
+          { rating: 10, criterion: 'flavor' }
         ],
         comparativeEvaluation: {
           preferredBrand: 'brand-id'
@@ -71,7 +71,7 @@ describe('Validation Utilities', () => {
     it('should reject invalid ratings', () => {
       const response = {
         answers: [
-          { rating: 6, criterion: 'appearance' }
+          { rating: 11, criterion: 'appearance' }
         ],
         comparativeEvaluation: {
           preferredBrand: 'brand-id'
@@ -86,7 +86,7 @@ describe('Validation Utilities', () => {
     it('should reject missing preferred brand', () => {
       const response = {
         answers: [
-          { rating: 4, criterion: 'appearance' }
+          { rating: 8, criterion: 'appearance' }
         ],
         comparativeEvaluation: {}
       };

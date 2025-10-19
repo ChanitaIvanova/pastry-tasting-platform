@@ -21,17 +21,17 @@ describe('RatingInput', () => {
     expect(screen.getByText(/appearance/i)).toBeInTheDocument();
   });
 
-  it('renders all rating options (1-5)', () => {
+  it('renders all rating options (1-10)', () => {
     render(<RatingInput {...defaultProps} />);
-    [1, 2, 3, 4, 5].forEach(rating => {
+    Array.from({ length: 10 }, (_, index) => index + 1).forEach(rating => {
       expect(screen.getByLabelText(rating.toString())).toBeInTheDocument();
     });
   });
 
   it('calls onChange with correct values when rating is selected', () => {
     render(<RatingInput {...defaultProps} />);
-    fireEvent.click(screen.getByLabelText('4'));
-    expect(mockOnChange).toHaveBeenCalledWith('appearance', 'rating', 4);
+    fireEvent.click(screen.getByLabelText('8'));
+    expect(mockOnChange).toHaveBeenCalledWith('appearance', 'rating', 8);
   });
 
   it('calls onChange with correct values when comment is entered', async () => {
@@ -42,8 +42,8 @@ describe('RatingInput', () => {
   });
 
   it('displays existing rating when provided', () => {
-    render(<RatingInput {...defaultProps} rating={4} />);
-    expect(screen.getByLabelText('4')).toBeChecked();
+    render(<RatingInput {...defaultProps} rating={8} />);
+    expect(screen.getByLabelText('8')).toBeChecked();
   });
 
   it('displays existing comment when provided', () => {

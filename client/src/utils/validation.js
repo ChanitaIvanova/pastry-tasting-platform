@@ -22,10 +22,10 @@ export const validateResponse = (data) => {
     errors.answers = 'Ratings are required';
   } else if (data.status === 'submitted') {
     const hasInvalidRating = data.answers.some(
-      answer => !answer.rating || answer.rating < 1 || answer.rating > 5
+      answer => !answer.rating || answer.rating < 1 || answer.rating > 10
     );
     if (hasInvalidRating) {
-      errors.answers = 'All ratings must be between 1 and 5';
+      errors.answers = 'All ratings must be between 1 and 10';
     }
   }
 

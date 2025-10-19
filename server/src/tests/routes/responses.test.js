@@ -39,25 +39,25 @@ describe('Responses Routes', () => {
         {
           brand: questionnaire.brands[0]._id,
           criterion: 'appearance',
-          rating: 4,
+          rating: 8,
           comments: 'Good appearance'
         },
         {
           brand: questionnaire.brands[0]._id,
           criterion: 'flavor',
-          rating: 5,
+          rating: 10,
           comments: 'Excellent flavor'
         },
         {
           brand: questionnaire.brands[1]._id,
           criterion: 'appearance',
-          rating: 3,
+          rating: 6,
           comments: 'Average appearance'
         },
         {
           brand: questionnaire.brands[1]._id,
           criterion: 'flavor',
-          rating: 4,
+          rating: 8,
           comments: 'Good flavor'
         }
       ],
@@ -91,9 +91,9 @@ describe('Responses Routes', () => {
       const brand1Ratings = res.body.brandRatings[brand1Id];
 
       expect(brand1Ratings).toBeDefined();
-      expect(brand1Ratings.averageScore).toBe(4.5); // (4 + 5) / 2
-      expect(brand1Ratings.criteriaScores).toHaveProperty('appearance', 4);
-      expect(brand1Ratings.criteriaScores).toHaveProperty('flavor', 5);
+      expect(brand1Ratings.averageScore).toBe(9); // (8 + 10) / 2
+      expect(brand1Ratings.criteriaScores).toHaveProperty('appearance', 8);
+      expect(brand1Ratings.criteriaScores).toHaveProperty('flavor', 10);
     });
 
     it('should calculate brand preferences correctly', async () => {

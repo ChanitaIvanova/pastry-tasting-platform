@@ -175,7 +175,7 @@ const Statistics = () => {
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
-                      <YAxis domain={[0, 5]} />
+                      <YAxis domain={[0, 10]} />
                       <Tooltip />
                       <Bar
                         dataKey="rating"

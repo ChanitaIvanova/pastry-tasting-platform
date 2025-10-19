@@ -29,14 +29,15 @@ const RatingInput = ({
         )}
         <RadioGroup
           row
+          sx={{ flexWrap: 'wrap' }}
           value={rating || ''}
           onChange={(e) => onChange(criterion, 'rating', parseInt(e.target.value))}
         >
-          {[1, 2, 3, 4, 5].map((value) => (
+          {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
             <FormControlLabel
               key={value}
               value={value}
-              control={<Radio sx={{ p: 0.5 }}/>}
+              control={<Radio sx={{ p: 0.5 }} />}
               label={value}
               disabled={disabled}
             />
