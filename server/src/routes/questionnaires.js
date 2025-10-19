@@ -10,7 +10,37 @@ const validateQuestionnaire = [
   body('title').trim().notEmpty(),
   body('brands').isArray().notEmpty(),
   body('brands.*.name').trim().notEmpty(),
-  body('questions').isArray().notEmpty()
+  body('questions').isArray().notEmpty(),
+  body('questions.*.criterion').trim().notEmpty(),
+  body('questions.*.description').trim().notEmpty(),
+  body('questions').custom((questions) => {
+    questions.forEach(question => {
+      const type = question.type || 'rating';
+      if (!['rating', 'single-select', 'text'].includes(type)) {
+        throw new Error('Invalid question type provided');
+      }
+
+      if (type === 'single-select') {
+        if (!Array.isArray(question.options) || question.options.length === 0) {
+          throw new Error('Single select questions require at least one option');
+        }
+
+        question.options.forEach(option => {
+          if (typeof option !== 'string' || !option.trim()) {
+            throw new Error('Single select options must be non-empty strings');
+          }
+        });
+      }
+
+      if (type === 'text') {
+        if (question.maxLength && question.maxLength > 500) {
+          throw new Error('Text question max length cannot exceed 500 characters');
+        }
+      }
+    });
+
+    return true;
+  })
 ];
 
 // Create questionnaire (Admin only)

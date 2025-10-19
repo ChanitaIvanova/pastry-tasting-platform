@@ -31,8 +31,20 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+const QUESTION_TYPES = {
+  RATING: 'rating',
+  SINGLE_SELECT: 'single-select',
+  TEXT: 'text'
+};
+
 const UserResponse = ({ response, questionnaire }) => {
   const [expanded, setExpanded] = useState(false);
+  const customQuestions = questionnaire.questions.filter(
+    question => (question.type || QUESTION_TYPES.RATING) !== QUESTION_TYPES.RATING
+  );
+  const customAnswersMap = new Map(
+    (response.customAnswers || []).map(answer => [answer.question?.toString(), answer.value])
+  );
 
   const formatUserCriteriaData = (criterion) => {
     const brandData = questionnaire.brands.map(brand => {
@@ -104,6 +116,27 @@ const UserResponse = ({ response, questionnaire }) => {
             <Typography variant="body2" color="text.secondary">
               Comments: {response.comparativeEvaluation.comments}
             </Typography>
+          )}
+          {customQuestions.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Additional Responses
+              </Typography>
+              {customQuestions.map(question => {
+                const questionId = question._id?.toString();
+                const answer = questionId ? customAnswersMap.get(questionId) : undefined;
+                return (
+                  <Box key={questionId || question.criterion} sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2">
+                      {question.description}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {answer || 'No response provided'}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
           )}
         </Box>
       </Collapse>

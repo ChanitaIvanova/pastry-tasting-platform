@@ -15,7 +15,10 @@ import {
   Step,
   StepLabel,
   StepContent,
-  TextField
+  TextField,
+  Radio,
+  RadioGroup,
+  FormControlLabel
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { questionnaires, responses } from '../services/api';
@@ -25,6 +28,20 @@ import { validateResponse } from '../utils/validation';
 import { useNotification } from '../contexts/NotificationContext';
 import { Save } from '@mui/icons-material';
 import BrandComment from '../components/BrandComment';
+
+const QUESTION_TYPES = {
+  RATING: 'rating',
+  SINGLE_SELECT: 'single-select',
+  TEXT: 'text'
+};
+
+const getQuestionId = (question) => question._id?.toString() || question.criterion;
+
+const getRatingQuestions = (questions = []) =>
+  questions.filter(question => (question.type || QUESTION_TYPES.RATING) === QUESTION_TYPES.RATING);
+
+const getCustomQuestions = (questions = []) =>
+  questions.filter(question => (question.type || QUESTION_TYPES.RATING) !== QUESTION_TYPES.RATING);
 
 const Questionnaire = () => {
   const { id } = useParams();
@@ -40,9 +57,9 @@ const Questionnaire = () => {
   const [error, setError] = useState('');
   const { showNotification } = useNotification();
   const [existingResponse, setExistingResponse] = useState(null);
-  const [saveAsDraft, setSaveAsDraft] = useState(false);
   const [loadingResponse, setLoadingResponse] = useState(true);
   const [brandComments, setBrandComments] = useState({});
+  const [customAnswers, setCustomAnswers] = useState({});
   const [expandedSteps, setExpandedSteps] = useState(new Set());
 
   useEffect(() => {
@@ -60,13 +77,19 @@ const Questionnaire = () => {
       const response = await questionnaires.getOne(id);
       setQuestionnaire(response.data);
       const initial = {};
+      const ratingQuestions = getRatingQuestions(response.data.questions);
       response.data.brands.forEach(brand => {
         initial[brand._id] = {};
-        response.data.questions.forEach(question => {
+        ratingQuestions.forEach(question => {
           initial[brand._id][question.criterion] = { rating: null, comment: '' };
         });
       });
       setEvaluations(initial);
+      const customInitial = {};
+      getCustomQuestions(response.data.questions).forEach(question => {
+        customInitial[getQuestionId(question)] = '';
+      });
+      setCustomAnswers(customInitial);
     } catch (err) {
       setError('Failed to fetch questionnaire');
     } finally {
@@ -92,11 +115,11 @@ const Questionnaire = () => {
 
   const initializeFromExistingResponse = (response) => {
     if (!questionnaire) return;
-    
+
     const evaluationsData = {};
     questionnaire.brands.forEach(brand => {
       evaluationsData[brand._id] = {};
-      questionnaire.questions.forEach(question => {
+      getRatingQuestions(questionnaire.questions).forEach(question => {
         evaluationsData[brand._id][question.criterion] = { rating: null };
       });
     });
@@ -111,7 +134,22 @@ const Questionnaire = () => {
     });
 
     setEvaluations(evaluationsData);
-    
+
+    const customAnswersData = {};
+    getCustomQuestions(questionnaire.questions).forEach(question => {
+      customAnswersData[getQuestionId(question)] = '';
+    });
+
+    if (response.customAnswers) {
+      response.customAnswers.forEach(answer => {
+        const questionKey = answer.question?.toString();
+        if (questionKey && Object.prototype.hasOwnProperty.call(customAnswersData, questionKey)) {
+          customAnswersData[questionKey] = answer.value;
+        }
+      });
+    }
+    setCustomAnswers(customAnswersData);
+
     const brandCommentsData = {};
     if (response.brandComments) {
       response.brandComments.forEach(comment => {
@@ -143,15 +181,32 @@ const Questionnaire = () => {
     }));
   };
 
+  const handleCustomAnswerChange = (questionId, value, maxLength) => {
+    const nextValue =
+      typeof maxLength === 'number' && typeof value === 'string'
+        ? value.slice(0, maxLength)
+        : value;
+
+    setCustomAnswers(prev => ({
+      ...prev,
+      [questionId]: nextValue
+    }));
+  };
+
   const isStepComplete = (brandId) => {
+    if (!questionnaire) return false;
     const brandEval = evaluations[brandId];
-    return !questionnaire.questions.some(question => 
-      brandEval?.[question.criterion]?.rating === null || 
-      brandEval?.[question.criterion]?.rating === 0
-    );
+    const ratingQuestions = getRatingQuestions(questionnaire.questions);
+    if (ratingQuestions.length === 0) return true;
+
+    return ratingQuestions.every(question => {
+      const rating = brandEval?.[question.criterion]?.rating;
+      return rating !== null && rating !== undefined && rating !== 0;
+    });
   };
 
   const canSubmit = () => {
+    if (!questionnaire) return false;
     return questionnaire.brands.every(brand => isStepComplete(brand._id));
   };
 
@@ -180,10 +235,19 @@ const Questionnaire = () => {
       }
     });
 
+    const formattedCustomAnswers = Object.entries(customAnswers).reduce((acc, [questionId, value]) => {
+      const trimmedValue = typeof value === 'string' ? value.trim() : '';
+      if (trimmedValue) {
+        acc.push({ question: questionId, value: trimmedValue });
+      }
+      return acc;
+    }, []);
+
     const responseData = {
       answers: formattedAnswers,
       brandComments: formattedBrandComments,
-      status: isDraft ? 'draft' : 'submitted'
+      status: isDraft ? 'draft' : 'submitted',
+      customAnswers: formattedCustomAnswers
     };
 
     if (!isDraft || preferredBrand || comments) {
@@ -243,6 +307,9 @@ const Questionnaire = () => {
 
   if (loading || loadingResponse) return <LoadingSpinner />;
   if (!questionnaire) return <Alert severity="error">Questionnaire not found</Alert>;
+
+  const ratingQuestions = getRatingQuestions(questionnaire.questions);
+  const customQuestions = getCustomQuestions(questionnaire.questions);
 
   return (
     <Box maxWidth="md" mx="auto">
@@ -309,7 +376,7 @@ const Questionnaire = () => {
                 </Box>
               </StepLabel>
               <StepContent TransitionProps={{ in: expandedSteps.has(index) }}>
-                {questionnaire.questions.map(question => (
+                {ratingQuestions.map(question => (
                   <RatingInput
                     key={question.criterion}
                     criterion={question.criterion}
@@ -398,6 +465,87 @@ const Questionnaire = () => {
                 ))}
               </Select>
             </FormControl>
+            {customQuestions.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Additional Questions
+                </Typography>
+                {customQuestions.map(question => {
+                  const questionId = getQuestionId(question);
+                  const currentValue = customAnswers[questionId] || '';
+                  const questionType = question.type || QUESTION_TYPES.RATING;
+
+                  if (questionType === QUESTION_TYPES.SINGLE_SELECT) {
+                    const options = question.options || [];
+
+                    if (options.length <= 5) {
+                      return (
+                        <Box key={questionId} sx={{ mb: 2 }}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            {question.description}
+                          </Typography>
+                          <RadioGroup
+                            value={currentValue}
+                            onChange={(e) => handleCustomAnswerChange(questionId, e.target.value)}
+                          >
+                            {options.map(option => (
+                              <FormControlLabel
+                                key={option}
+                                value={option}
+                                control={<Radio />}
+                                label={option}
+                                disabled={questionnaire.status === 'closed'}
+                              />
+                            ))}
+                          </RadioGroup>
+                        </Box>
+                      );
+                    }
+
+                    const labelId = `custom-select-${questionId}`;
+                    return (
+                      <FormControl
+                        key={questionId}
+                        fullWidth
+                        sx={{ mb: 2 }}
+                        disabled={questionnaire.status === 'closed'}
+                      >
+                        <InputLabel id={labelId}>{question.description}</InputLabel>
+                        <Select
+                          labelId={labelId}
+                          value={currentValue}
+                          label={question.description}
+                          onChange={(e) => handleCustomAnswerChange(questionId, e.target.value)}
+                        >
+                          {options.map(option => (
+                            <MenuItem key={option} value={option}>
+                              {option}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    );
+                  }
+
+                  const maxLength = question.maxLength || 500;
+                  return (
+                    <TextField
+                      key={questionId}
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      label={question.description}
+                      value={currentValue}
+                      onChange={(e) => handleCustomAnswerChange(questionId, e.target.value, maxLength)}
+                      disabled={questionnaire.status === 'closed'}
+                      inputProps={{ maxLength }}
+                      helperText={`${currentValue.length}/${maxLength} characters`}
+                      sx={{ mb: 3 }}
+                    />
+                  );
+                })}
+              </Box>
+            )}
             <TextField
               fullWidth
               multiline

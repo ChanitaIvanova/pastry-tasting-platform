@@ -8,6 +8,9 @@ describe('Validation Utilities', () => {
         brands: [
           { name: 'Brand 1' },
           { name: 'Brand 2' }
+        ],
+        questions: [
+          { criterion: 'appearance', description: 'Rate appearance', type: 'rating' }
         ]
       };
 
@@ -19,7 +22,10 @@ describe('Validation Utilities', () => {
     it('should reject empty title', () => {
       const questionnaire = {
         title: '',
-        brands: [{ name: 'Brand 1' }, { name: 'Brand 2' }]
+        brands: [{ name: 'Brand 1' }, { name: 'Brand 2' }],
+        questions: [
+          { criterion: 'appearance', description: 'Rate appearance', type: 'rating' }
+        ]
       };
 
       const result = validateQuestionnaire(questionnaire);
@@ -30,12 +36,34 @@ describe('Validation Utilities', () => {
     it('should reject insufficient brands', () => {
       const questionnaire = {
         title: 'Test',
-        brands: [{ name: 'Brand 1' }]
+        brands: [{ name: 'Brand 1' }],
+        questions: [
+          { criterion: 'appearance', description: 'Rate appearance', type: 'rating' }
+        ]
       };
 
       const result = validateQuestionnaire(questionnaire);
       expect(result.isValid).toBe(false);
       expect(result.errors).toHaveProperty('brands');
+    });
+
+    it('should require options for single select questions', () => {
+      const questionnaire = {
+        title: 'Test',
+        brands: [{ name: 'Brand 1' }, { name: 'Brand 2' }],
+        questions: [
+          {
+            criterion: 'favorite-time',
+            description: 'When would you enjoy this pastry?',
+            type: 'single-select',
+            options: []
+          }
+        ]
+      };
+
+      const result = validateQuestionnaire(questionnaire);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toHaveProperty('questions.0.options');
     });
   });
 

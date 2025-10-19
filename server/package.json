@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest --setupFiles ./src/tests/setup.js --detectOpenHandles",
-    "test:watch": "jest --watch --setupFiles ./src/tests/setup.js",
-    "test:coverage": "jest --coverage --setupFiles ./src/tests/setup.js"
+    "test": "jest --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -30,6 +30,9 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/tests/setup.js"
+    ],
     "coveragePathIgnorePatterns": [
       "/node_modules/"
     ],

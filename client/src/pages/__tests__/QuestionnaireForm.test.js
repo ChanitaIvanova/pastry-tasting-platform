@@ -28,6 +28,7 @@ describe('QuestionnaireForm', () => {
     expect(screen.getByLabelText(/questionnaire title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/add brand/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add question/i })).toBeInTheDocument();
   });
 
   it('allows adding and removing brands', async () => {
@@ -82,7 +83,68 @@ describe('QuestionnaireForm', () => {
         brands: [
           { name: 'Brand 1' },
           { name: 'Brand 2' }
-        ]
+        ],
+        questions: expect.arrayContaining([
+          expect.objectContaining({
+            criterion: 'appearance',
+            description: 'Rate the appearance of the pastry',
+            type: 'rating'
+          })
+        ])
+      }));
+    });
+  });
+
+  it('allows configuring a single select question', async () => {
+    renderQuestionnaireForm();
+
+    const addQuestionButton = screen.getByRole('button', { name: /add question/i });
+    fireEvent.click(addQuestionButton);
+
+    const criterionInputs = screen.getAllByLabelText(/criterion/i);
+    const descriptionInputs = screen.getAllByLabelText(/description/i);
+    const newCriterionInput = criterionInputs[criterionInputs.length - 1];
+    const newDescriptionInput = descriptionInputs[descriptionInputs.length - 1];
+
+    await userEvent.type(newCriterionInput, 'occasion');
+    await userEvent.type(newDescriptionInput, 'When would you enjoy this?');
+
+    const typeSelects = screen.getAllByLabelText(/type/i);
+    const newTypeSelect = typeSelects[typeSelects.length - 1];
+    fireEvent.mouseDown(newTypeSelect);
+    const singleSelectOption = await screen.findByRole('option', { name: /single select/i });
+    fireEvent.click(singleSelectOption);
+
+    const addOptionButton = screen.getByRole('button', { name: /add option/i });
+    fireEvent.click(addOptionButton);
+
+    const optionInputs = screen.getAllByLabelText(/option/i);
+    await userEvent.type(optionInputs[optionInputs.length - 2], 'Breakfast');
+    await userEvent.type(optionInputs[optionInputs.length - 1], 'Dessert');
+
+    questionnaires.create.mockResolvedValueOnce({ data: { id: '1' } });
+
+    await userEvent.type(screen.getByLabelText(/questionnaire title/i), 'Questionnaire with single select');
+
+    const brandInput = screen.getByLabelText(/add brand/i);
+    const addBrandButton = screen.getByRole('button', { name: /^add$/i });
+    await userEvent.type(brandInput, 'Brand 1');
+    fireEvent.click(addBrandButton);
+    await userEvent.type(brandInput, 'Brand 2');
+    fireEvent.click(addBrandButton);
+
+    fireEvent.click(screen.getByRole('button', { name: /create questionnaire/i }));
+
+    await waitFor(() => {
+      expect(questionnaires.create).toHaveBeenCalledWith(expect.objectContaining({
+        questions: expect.arrayContaining([
+          expect.objectContaining({
+            criterion: 'occasion',
+            description: 'When would you enjoy this?',
+            type: 'single-select',
+            options: ['Breakfast', 'Dessert']
+          })
+        ])
       }));
     });
   });

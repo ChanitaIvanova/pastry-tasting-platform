@@ -12,12 +12,24 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Alert,
-  Divider
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+  FormHelperText
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { questionnaires } from '../services/api';
 import { validateQuestionnaire } from '../utils/validation';
 import { useNotification } from '../contexts/NotificationContext';
+
+const QUESTION_TYPES = {
+  RATING: 'rating',
+  SINGLE_SELECT: 'single-select',
+  TEXT: 'text'
+};
 
 const QuestionnaireForm = () => {
   const navigate = useNavigate();
@@ -25,14 +37,13 @@ const QuestionnaireForm = () => {
   const [newBrand, setNewBrand] = useState('');
   const [brands, setBrands] = useState([]);
   const [questions, setQuestions] = useState([
-    { criterion: 'appearance', description: 'Rate the appearance of the pastry' },
-    { criterion: 'aroma', description: 'Rate the aroma of the pastry' },
-    { criterion: 'texture', description: 'Rate the texture/mouthfeel of the pastry' },
-    { criterion: 'flavor', description: 'Rate the flavor/taste of the pastry' },
-    { criterion: 'aftertaste', description: 'Rate the aftertaste of the pastry' },
-    { criterion: 'overall', description: 'Rate the overall quality of the pastry' }
+    { criterion: 'appearance', description: 'Rate the appearance of the pastry', type: QUESTION_TYPES.RATING },
+    { criterion: 'aroma', description: 'Rate the aroma of the pastry', type: QUESTION_TYPES.RATING },
+    { criterion: 'texture', description: 'Rate the texture/mouthfeel of the pastry', type: QUESTION_TYPES.RATING },
+    { criterion: 'flavor', description: 'Rate the flavor/taste of the pastry', type: QUESTION_TYPES.RATING },
+    { criterion: 'aftertaste', description: 'Rate the aftertaste of the pastry', type: QUESTION_TYPES.RATING },
+    { criterion: 'overall', description: 'Rate the overall quality of the pastry', type: QUESTION_TYPES.RATING }
   ]);
-  const [newQuestion, setNewQuestion] = useState({ criterion: '', description: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { showNotification } = useNotification();
@@ -49,24 +60,106 @@ const QuestionnaireForm = () => {
   };
 
   const handleAddQuestion = () => {
-    if (newQuestion.criterion.trim() && newQuestion.description.trim()) {
-      setQuestions([...questions, { ...newQuestion }]);
-      setNewQuestion({ criterion: '', description: '' });
-    }
+    setQuestions(prev => ([
+      ...prev,
+      {
+        criterion: '',
+        description: '',
+        type: QUESTION_TYPES.RATING,
+        options: []
+      }
+    ]));
   };
 
   const handleRemoveQuestion = (index) => {
-    setQuestions(questions.filter((_, i) => i !== index));
+    setQuestions(prev => prev.filter((_, i) => i !== index));
   };
+
+  const handleQuestionChange = (index, field, value) => {
+    setQuestions(prev => prev.map((question, i) => (
+      i === index ? { ...question, [field]: value } : question
+    )));
+  };
+
+  const handleQuestionTypeChange = (index, type) => {
+    setQuestions(prev => prev.map((question, i) => {
+      if (i !== index) return question;
+      const updatedQuestion = { ...question, type };
+
+      if (type === QUESTION_TYPES.SINGLE_SELECT) {
+        updatedQuestion.options = question.options && question.options.length > 0
+          ? question.options
+          : [''];
+        delete updatedQuestion.maxLength;
+      } else if (type === QUESTION_TYPES.TEXT) {
+        updatedQuestion.maxLength = 500;
+        delete updatedQuestion.options;
+      } else {
+        delete updatedQuestion.options;
+        delete updatedQuestion.maxLength;
+      }
+
+      return updatedQuestion;
+    }));
+  };
+
+  const handleAddOption = (questionIndex) => {
+    setQuestions(prev => prev.map((question, i) => {
+      if (i !== questionIndex) return question;
+      const options = question.options ? [...question.options, ''] : [''];
+      return { ...question, options };
+    }));
+  };
+
+  const handleOptionChange = (questionIndex, optionIndex, value) => {
+    setQuestions(prev => prev.map((question, i) => {
+      if (i !== questionIndex) return question;
+      const options = [...(question.options || [])];
+      options[optionIndex] = value;
+      return { ...question, options };
+    }));
+  };
+
+  const handleRemoveOption = (questionIndex, optionIndex) => {
+    setQuestions(prev => prev.map((question, i) => {
+      if (i !== questionIndex) return question;
+      const options = (question.options || []).filter((_, idx) => idx !== optionIndex);
+      return { ...question, options: options.length ? options : [''] };
+    }));
+  };
+
+  const formatQuestionsForSubmit = (questionList) => questionList.map(question => {
+    const type = question.type || QUESTION_TYPES.RATING;
+    const formatted = {
+      ...(question._id ? { _id: question._id } : {}),
+      criterion: question.criterion?.trim() || '',
+      description: question.description?.trim() || '',
+      type
+    };
+
+    if (type === QUESTION_TYPES.SINGLE_SELECT) {
+      formatted.options = (question.options || [])
+        .map(option => option.trim())
+        .filter(Boolean);
+    }
+
+    if (type === QUESTION_TYPES.TEXT) {
+      formatted.maxLength = 500;
+    }
+
+    return formatted;
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+    const formattedQuestions = formatQuestionsForSubmit(questions);
+
     const questionnaireData = {
       title: title.trim(),
       brands,
-      questions
+      questions: formattedQuestions
     };
 
     const { isValid, errors } = validateQuestionnaire(questionnaireData);
@@ -162,49 +255,124 @@ const QuestionnaireForm = () => {
             <Typography variant="h6" gutterBottom>
               Questions
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-              <TextField
-                label="Criterion"
-                value={newQuestion.criterion}
-                onChange={(e) => setNewQuestion(prev => ({ ...prev, criterion: e.target.value }))}
-                size="small"
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                label="Description"
-                value={newQuestion.description}
-                onChange={(e) => setNewQuestion(prev => ({ ...prev, description: e.target.value }))}
-                size="small"
-                sx={{ flex: 2 }}
-              />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
               <Button
-                variant="contained"
+                variant="outlined"
                 onClick={handleAddQuestion}
                 startIcon={<AddIcon />}
               >
-                Add
+                Add Question
               </Button>
             </Box>
 
-            <List>
-              {questions.map((question, index) => (
-                <ListItem key={index} divider>
-                  <ListItemText 
-                    primary={question.criterion}
-                    secondary={question.description}
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleRemoveQuestion(index)}
+            {questions.map((question, index) => (
+              <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2
+                  }}
+                >
+                  <Typography variant="subtitle1">
+                    Question {index + 1}
+                  </Typography>
+                  <IconButton
+                    edge="end"
+                    onClick={() => handleRemoveQuestion(index)}
+                    size="small"
+                    aria-label="Delete question"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      label="Criterion"
+                      value={question.criterion}
+                      onChange={(e) => handleQuestionChange(index, 'criterion', e.target.value)}
+                      fullWidth
                       size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={5}>
+                    <TextField
+                      label="Description"
+                      value={question.description}
+                      onChange={(e) => handleQuestionChange(index, 'description', e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Type</InputLabel>
+                      <Select
+                        value={question.type || QUESTION_TYPES.RATING}
+                        label="Type"
+                        onChange={(e) => handleQuestionTypeChange(index, e.target.value)}
+                      >
+                        <MenuItem value={QUESTION_TYPES.RATING}>Brand rating</MenuItem>
+                        <MenuItem value={QUESTION_TYPES.SINGLE_SELECT}>Single select</MenuItem>
+                        <MenuItem value={QUESTION_TYPES.TEXT}>Open text</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
+                {question.type === QUESTION_TYPES.SINGLE_SELECT && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2">
+                      Answer options
+                    </Typography>
+                    {(question.options || []).map((option, optionIndex) => (
+                      <Box
+                        key={optionIndex}
+                        sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}
+                      >
+                        <TextField
+                          label={`Option ${optionIndex + 1}`}
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, optionIndex, e.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                        <IconButton
+                          onClick={() => handleRemoveOption(index, optionIndex)}
+                          size="small"
+                          aria-label="Remove option"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      sx={{ mt: 1 }}
+                      onClick={() => handleAddOption(index)}
                     >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
+                      Add option
+                    </Button>
+                  </Box>
+                )}
+
+                {question.type === QUESTION_TYPES.TEXT && (
+                  <FormHelperText sx={{ mt: 2 }}>
+                    Responses are limited to 500 characters.
+                  </FormHelperText>
+                )}
+              </Paper>
+            ))}
+
+            {questions.length === 0 && (
+              <Typography color="text.secondary" align="center">
+                No questions added yet
+              </Typography>
+            )}
           </Box>
 
           <Divider sx={{ my: 3 }} />
