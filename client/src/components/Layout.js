@@ -5,7 +5,6 @@ import {
   Box,
   Toolbar,
   Typography,
-  Button,
   Container,
   IconButton,
   Drawer,
@@ -13,21 +12,28 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider
+  Divider,
+  Tooltip
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard,
   AddCircle,
   Logout,
-  Person
+  Person,
+  LightModeRounded,
+  DarkModeRounded
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
+import { useThemeMode } from '../contexts/ThemeModeContext';
 
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const { mode, toggleColorMode } = useThemeMode();
+  const theme = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -36,20 +42,32 @@ const Layout = () => {
 
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-    ...(user?.role === 'admin' ? [
-      { text: 'New Questionnaire', icon: <AddCircle />, path: '/questionnaires/new' }
-    ] : [])
+    ...(user?.role === 'admin'
+      ? [{ text: 'New Questionnaire', icon: <AddCircle />, path: '/questionnaires/new' }]
+      : [])
   ];
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed">
-        <Toolbar>
+      <AppBar
+        position="fixed"
+        color="transparent"
+        elevation={0}
+        sx={{
+          backgroundColor: theme.palette.background.paper,
+          boxShadow:
+            mode === 'light'
+              ? '0 18px 36px rgba(63, 42, 39, 0.08)'
+              : '0 18px 36px rgba(12, 8, 7, 0.6)'
+        }}
+      >
+        <Toolbar sx={{ gap: 2 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 2 }}
+            sx={{ mr: 1 }}
+            aria-label="Open navigation"
           >
             <MenuIcon />
           </IconButton>
@@ -62,8 +80,9 @@ const Layout = () => {
               textDecoration: 'none',
               color: 'inherit',
               flexGrow: 1,
+              gap: 1.5,
               '&:hover': {
-                opacity: 0.8
+                opacity: 0.85
               }
             }}
           >
@@ -72,32 +91,43 @@ const Layout = () => {
               src="/logo.jpg"
               alt="Pastry Tasting Platform"
               sx={{
-                height: 40,
-                mr: 2,
-                borderRadius: 1
+                height: 44,
+                width: 44,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: `2px solid ${theme.palette.primary.main}`,
+                boxShadow: '0 10px 20px rgba(0,0,0,0.12)'
               }}
             />
-            <Typography variant="h6">
-              Pastry Tasting Platform
-            </Typography>
+            <Box>
+              <Typography variant="h6">Pastry Tasting Platform</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Curate experiences one bite at a time
+              </Typography>
+            </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Person />
-            <Typography variant="body2">{user?.username}</Typography>
-            <Button color="inherit" onClick={handleLogout}>
-              <Logout />
-            </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Tooltip title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}>
+              <IconButton color="inherit" onClick={toggleColorMode} aria-label="Toggle color mode">
+                {mode === 'light' ? <DarkModeRounded /> : <LightModeRounded />}
+              </IconButton>
+            </Tooltip>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Person fontSize="small" />
+              <Typography variant="body2">{user?.username}</Typography>
+            </Box>
+            <Tooltip title="Log out">
+              <IconButton color="inherit" onClick={handleLogout} aria-label="Log out">
+                <Logout />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <Box sx={{ width: 250 }} role="presentation">
-          <List>
+      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 260 }} role="presentation">
+          <List sx={{ py: 2 }}>
             {menuItems.map((item) => (
               <ListItem
                 button
@@ -106,13 +136,21 @@ const Layout = () => {
                   navigate(item.path);
                   setDrawerOpen(false);
                 }}
+                sx={{
+                  borderRadius: 2,
+                  mx: 1,
+                  mb: 0.5,
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.hover
+                  }
+                }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemIcon sx={{ color: theme.palette.primary.main }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.text} />
               </ListItem>
             ))}
           </List>
-          <Divider />
+          <Divider sx={{ mx: 2 }} />
         </Box>
       </Drawer>
 
@@ -120,13 +158,21 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           mt: 8,
-          backgroundColor: (theme) => theme.palette.grey[100],
+          backgroundColor: theme.palette.background.default,
           minHeight: '100vh'
         }}
       >
-        <Container maxWidth="lg">
+        <Container
+          maxWidth="lg"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+            pt: { xs: 2, sm: 3 }
+          }}
+        >
           <Outlet />
         </Container>
       </Box>
@@ -134,4 +180,4 @@ const Layout = () => {
   );
 };
 
-export default Layout; 
+export default Layout;

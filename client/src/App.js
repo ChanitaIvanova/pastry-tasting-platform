@@ -1,11 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { QueryClientProvider } from 'react-query';
+
 import { AuthProvider } from './contexts/AuthContext';
-import theme from './theme';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
-import { QueryClientProvider } from 'react-query';
+import { ThemeModeProvider } from './contexts/ThemeModeContext';
 import { queryClient } from './services/queryClient';
 
 import Layout from './components/Layout';
@@ -22,74 +24,75 @@ import QuestionnaireDetails from './pages/QuestionnaireDetails';
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AuthProvider>
-          <NotificationProvider>
-            <SocketProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route element={<Layout />}>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route
-                      path="/dashboard"
-                      element={
-                        <ProtectedRoute>
-                          <Dashboard />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/questionnaires/new"
-                      element={
-                        <ProtectedRoute adminOnly>
-                          <QuestionnaireForm />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/questionnaires/:id/edit"
-                      element={
-                        <ProtectedRoute adminOnly>
-                          <QuestionnaireEdit />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/questionnaires/:id"
-                      element={
-                        <ProtectedRoute>
-                          <Questionnaire />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/questionnaires/:id/statistics"
-                      element={
-                        <ProtectedRoute adminOnly>
-                          <Statistics />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/questionnaires/:id/details"
-                      element={
-                        <ProtectedRoute adminOnly>
-                          <QuestionnaireDetails />
-                        </ProtectedRoute>
-                      }
-                    />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
-            </SocketProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <ThemeModeProvider>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <AuthProvider>
+            <NotificationProvider>
+              <SocketProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route element={<Layout />}>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route
+                        path="/dashboard"
+                        element={
+                          <ProtectedRoute>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/questionnaires/new"
+                        element={
+                          <ProtectedRoute adminOnly>
+                            <QuestionnaireForm />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/questionnaires/:id/edit"
+                        element={
+                          <ProtectedRoute adminOnly>
+                            <QuestionnaireEdit />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/questionnaires/:id"
+                        element={
+                          <ProtectedRoute>
+                            <Questionnaire />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/questionnaires/:id/statistics"
+                        element={
+                          <ProtectedRoute adminOnly>
+                            <Statistics />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/questionnaires/:id/details"
+                        element={
+                          <ProtectedRoute adminOnly>
+                            <QuestionnaireDetails />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Route>
+                  </Routes>
+                </BrowserRouter>
+              </SocketProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </LocalizationProvider>
+      </ThemeModeProvider>
     </QueryClientProvider>
   );
 }
 
-export default App; 
+export default App;
