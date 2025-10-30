@@ -21,8 +21,19 @@ describe('Response API', () => {
         { name: 'Brand 2' }
       ],
       questions: [
-        { criterion: 'appearance', description: 'Rate appearance' },
-        { criterion: 'flavor', description: 'Rate flavor' }
+        { criterion: 'appearance', description: 'Rate appearance', type: 'rating' },
+        { criterion: 'flavor', description: 'Rate flavor', type: 'rating' },
+        {
+          criterion: 'favoriteOccasion',
+          description: 'When would you enjoy this pastry?',
+          type: 'single-select',
+          options: ['Breakfast', 'Dessert']
+        },
+        {
+          criterion: 'additionalFeedback',
+          description: 'Share any additional feedback',
+          type: 'text'
+        }
       ],
       status: 'open'
     });
@@ -48,7 +59,17 @@ describe('Response API', () => {
         comparativeEvaluation: {
           preferredBrand: testQuestionnaire.brands[0]._id,
           comments: 'Overall good'
-        }
+        },
+        customAnswers: [
+          {
+            question: testQuestionnaire.questions[2]._id,
+            value: 'Breakfast'
+          },
+          {
+            question: testQuestionnaire.questions[3]._id,
+            value: 'Great treat!'
+          }
+        ]
       };
 
       const response = await request(app)
@@ -59,6 +80,76 @@ describe('Response API', () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('answers');
       expect(response.body.answers).toHaveLength(2);
+      expect(response.body.customAnswers).toHaveLength(2);
+    });
+
+    it('should reject invalid custom answers', async () => {
+      const responseData = {
+        answers: [
+          {
+            brand: testQuestionnaire.brands[0]._id,
+            criterion: 'appearance',
+            rating: 8
+          },
+          {
+            brand: testQuestionnaire.brands[0]._id,
+            criterion: 'flavor',
+            rating: 9
+          }
+        ],
+        comparativeEvaluation: {
+          preferredBrand: testQuestionnaire.brands[0]._id
+        },
+        customAnswers: [
+          {
+            question: testQuestionnaire.questions[2]._id,
+            value: 'Invalid option'
+          }
+        ]
+      };
+
+      const response = await request(app)
+        .post(`/api/responses/${testQuestionnaire._id}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send(responseData);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message');
+    });
+
+    it('should enforce max length for text answers', async () => {
+      const longText = 'a'.repeat(501);
+      const responseData = {
+        answers: [
+          {
+            brand: testQuestionnaire.brands[0]._id,
+            criterion: 'appearance',
+            rating: 8
+          },
+          {
+            brand: testQuestionnaire.brands[0]._id,
+            criterion: 'flavor',
+            rating: 9
+          }
+        ],
+        comparativeEvaluation: {
+          preferredBrand: testQuestionnaire.brands[0]._id
+        },
+        customAnswers: [
+          {
+            question: testQuestionnaire.questions[3]._id,
+            value: longText
+          }
+        ]
+      };
+
+      const response = await request(app)
+        .post(`/api/responses/${testQuestionnaire._id}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send(responseData);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('message');
     });
 
     it('should not allow submission for closed questionnaire', async () => {
@@ -67,7 +158,18 @@ describe('Response API', () => {
       const response = await request(app)
         .post(`/api/responses/${testQuestionnaire._id}`)
         .set('Authorization', `Bearer ${clientToken}`)
-        .send({});
+        .send({
+          answers: [
+            {
+              brand: testQuestionnaire.brands[0]._id,
+              criterion: 'appearance',
+              rating: 8
+            }
+          ],
+          comparativeEvaluation: {
+            preferredBrand: testQuestionnaire.brands[0]._id
+          }
+        });
 
       expect(response.status).toBe(400);
     });
@@ -94,7 +196,7 @@ describe('Response API', () => {
         comparativeEvaluation: {
           preferredBrand: testQuestionnaire.brands[0]._id
         },
-        isSubmitted: true
+        status: 'submitted'
       });
     });
 

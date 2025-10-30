@@ -28,7 +28,22 @@ describe('Responses Routes', () => {
         { _id: new mongoose.Types.ObjectId(), name: 'Brand 2' }
       ],
       createdBy: adminUser._id,
-      status: 'open'
+      status: 'open',
+      questions: [
+        { criterion: 'appearance', description: 'Rate appearance', type: 'rating' },
+        { criterion: 'flavor', description: 'Rate flavor', type: 'rating' },
+        {
+          criterion: 'favoriteOccasion',
+          description: 'When would you enjoy this pastry?',
+          type: 'single-select',
+          options: ['Morning', 'Evening']
+        },
+        {
+          criterion: 'tastingNotes',
+          description: 'Any additional notes',
+          type: 'text'
+        }
+      ]
     });
 
     // Create test response
@@ -65,7 +80,17 @@ describe('Responses Routes', () => {
         preferredBrand: questionnaire.brands[0]._id,
         comments: 'Brand 1 is better overall'
       },
-      isSubmitted: true
+      customAnswers: [
+        {
+          question: questionnaire.questions[2]._id,
+          value: 'Morning'
+        },
+        {
+          question: questionnaire.questions[3]._id,
+          value: 'Loved the aroma'
+        }
+      ],
+      status: 'submitted'
     });
   });
 
@@ -119,7 +144,10 @@ describe('Responses Routes', () => {
         title: 'Empty Questionnaire',
         brands: [{ name: 'Brand 1' }],
         createdBy: adminUser._id,
-        status: 'open'
+        status: 'open',
+        questions: [
+          { criterion: 'appearance', description: 'Rate appearance', type: 'rating' }
+        ]
       });
 
       const res = await request(app)

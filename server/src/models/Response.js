@@ -29,6 +29,18 @@ const brandEvaluationSchema = new mongoose.Schema({
   comment: String
 });
 
+const customAnswerSchema = new mongoose.Schema({
+  question: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  },
+  value: {
+    type: String,
+    required: true,
+    trim: true
+  }
+});
+
 const responseSchema = new mongoose.Schema({
   questionnaire: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,7 +68,8 @@ const responseSchema = new mongoose.Schema({
     type: String,
     enum: ['draft', 'submitted'],
     default: 'draft'
-  }
+  },
+  customAnswers: [customAnswerSchema]
 }, {
   timestamps: true,
 });

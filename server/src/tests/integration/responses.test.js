@@ -20,7 +20,22 @@ describe('Response Integration Tests', () => {
         { name: 'Test Brand 1' },
         { name: 'Test Brand 2' }
       ],
-      status: 'open'
+      status: 'open',
+      questions: [
+        { criterion: 'appearance', description: 'Rate appearance', type: 'rating' },
+        { criterion: 'flavor', description: 'Rate flavor', type: 'rating' },
+        {
+          criterion: 'preferredOccasion',
+          description: 'When would you enjoy this pastry?',
+          type: 'single-select',
+          options: ['Morning', 'Evening']
+        },
+        {
+          criterion: 'additionalNotes',
+          description: 'Share any additional notes',
+          type: 'text'
+        }
+      ]
     });
   });
 
@@ -83,7 +98,18 @@ describe('Response Integration Tests', () => {
       const response = await request(app)
         .post(`/api/responses/${testQuestionnaire._id}`)
         .set('Authorization', `Bearer ${clientToken}`)
-        .send({});
+        .send({
+          answers: [
+            {
+              brand: testQuestionnaire.brands[0]._id,
+              criterion: 'appearance',
+              rating: 8
+            }
+          ],
+          comparativeEvaluation: {
+            preferredBrand: testQuestionnaire.brands[0]._id
+          }
+        });
 
       expect(response.status).toBe(400);
       expect(response.body.message).toMatch(/closed/i);

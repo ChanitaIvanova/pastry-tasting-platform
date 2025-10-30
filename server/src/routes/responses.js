@@ -5,14 +5,69 @@ const Response = require('../models/Response');
 const Questionnaire = require('../models/Questionnaire');
 const router = express.Router();
 
+const getQuestionType = (question) => question?.type || 'rating';
+
+const validateCustomAnswers = (questionnaire, customAnswers = []) => {
+  const questionMap = new Map(
+    questionnaire.questions.map(question => [question._id.toString(), question])
+  );
+
+  const invalid = [];
+  const formatted = [];
+
+  customAnswers.forEach(answer => {
+    const question = questionMap.get(answer.question);
+
+    if (!question) {
+      invalid.push({ question: answer.question, reason: 'Question not found in questionnaire' });
+      return;
+    }
+
+    const type = getQuestionType(question);
+
+    if (type === 'rating') {
+      invalid.push({ question: answer.question, reason: 'Question does not accept custom answers' });
+      return;
+    }
+
+    const value = typeof answer.value === 'string' ? answer.value.trim() : '';
+    if (!value) {
+      invalid.push({ question: answer.question, reason: 'Answer value is required' });
+      return;
+    }
+
+    if (type === 'single-select') {
+      if (!question.options || !question.options.includes(value)) {
+        invalid.push({ question: answer.question, reason: 'Answer must match one of the provided options' });
+        return;
+      }
+    }
+
+    if (type === 'text') {
+      const maxLength = question.maxLength || 500;
+      if (value.length > maxLength) {
+        invalid.push({ question: answer.question, reason: `Answer must be ${maxLength} characters or fewer` });
+        return;
+      }
+    }
+
+    formatted.push({ question: question._id, value });
+  });
+
+  return { formatted, invalid };
+};
+
 // Validation middleware
 const validateResponse = [
-  body('answers').isArray().notEmpty(),
+  body('answers').isArray(),
   body('answers.*.brand').isMongoId(),
   body('answers.*.criterion').isString().trim().notEmpty(),
   body('answers.*.rating').isInt({ min: 1, max: 10 }),
   body('comparativeEvaluation.preferredBrand').optional().isMongoId(),
-  body('comparativeEvaluation.comments').optional().trim()
+  body('comparativeEvaluation.comments').optional().trim(),
+  body('customAnswers').optional().isArray(),
+  body('customAnswers.*.question').isMongoId(),
+  body('customAnswers.*.value').isString().trim().notEmpty()
 ];
 
 // Submit a response
@@ -33,7 +88,14 @@ router.post('/:questionnaireId', [auth, validateResponse], async (req, res) => {
     }
 
     // Validate that all criteria exist in the questionnaire
-    const validCriteria = questionnaire.questions.map(q => q.criterion);
+    const ratingQuestions = questionnaire.questions
+      .filter(question => getQuestionType(question) === 'rating');
+
+    if (ratingQuestions.length > 0 && (!req.body.answers || req.body.answers.length === 0)) {
+      return res.status(400).json({ message: 'Ratings are required for brand questions' });
+    }
+
+    const validCriteria = ratingQuestions.map(q => q.criterion);
     const invalidCriteria = req.body.answers.filter(
       answer => !validCriteria.includes(answer.criterion)
     );
@@ -42,6 +104,16 @@ router.post('/:questionnaireId', [auth, validateResponse], async (req, res) => {
       return res.status(400).json({
         message: 'Invalid criteria found',
         invalidCriteria: invalidCriteria.map(a => a.criterion)
+      });
+    }
+
+    const { formatted: formattedCustomAnswers, invalid: invalidCustomAnswers } =
+      validateCustomAnswers(questionnaire, req.body.customAnswers);
+
+    if (invalidCustomAnswers.length > 0) {
+      return res.status(400).json({
+        message: 'Invalid answers for open or single select questions',
+        details: invalidCustomAnswers
       });
     }
 
@@ -70,14 +142,18 @@ router.post('/:questionnaireId', [auth, validateResponse], async (req, res) => {
       response.answers = req.body.answers;
       response.comparativeEvaluation = req.body.comparativeEvaluation;
       response.status = req.body.status;
+      response.brandComments = req.body.brandComments;
+      response.customAnswers = formattedCustomAnswers;
     } else {
       // Create new response
       response = new Response({
         questionnaire: questionnaire._id,
         user: req.user._id,
         answers: req.body.answers,
+        brandComments: req.body.brandComments,
         comparativeEvaluation: req.body.comparativeEvaluation,
-        status: req.body.status
+        status: req.body.status,
+        customAnswers: formattedCustomAnswers
       });
     }
 
@@ -218,7 +294,20 @@ router.put('/:responseId', [auth, validateResponse], async (req, res) => {
       return res.status(400).json({ message: 'Cannot edit response for closed questionnaire' });
     }
 
-    Object.assign(response, req.body);
+    const { formatted: formattedCustomAnswers, invalid: invalidCustomAnswers } =
+      validateCustomAnswers(questionnaire, req.body.customAnswers);
+
+    if (invalidCustomAnswers.length > 0) {
+      return res.status(400).json({
+        message: 'Invalid answers for open or single select questions',
+        details: invalidCustomAnswers
+      });
+    }
+
+    Object.assign(response, {
+      ...req.body,
+      customAnswers: formattedCustomAnswers
+    });
     await response.save();
     res.json(response);
   } catch (error) {

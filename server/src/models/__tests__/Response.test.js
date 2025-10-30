@@ -21,6 +21,10 @@ describe('Response Model', () => {
       brands: [
         { name: 'Brand 1' },
         { name: 'Brand 2' }
+      ],
+      questions: [
+        { criterion: 'appearance', description: 'Rate appearance', type: 'rating' },
+        { criterion: 'flavor', description: 'Rate flavor', type: 'rating' }
       ]
     });
   });
@@ -59,7 +63,7 @@ describe('Response Model', () => {
 
     const response = await Response.create(responseData);
     expect(response.answers).toHaveLength(2);
-    expect(response.isSubmitted).toBe(true);
+    expect(response.status).toBe('draft');
   });
 
   it('should validate rating range', async () => {

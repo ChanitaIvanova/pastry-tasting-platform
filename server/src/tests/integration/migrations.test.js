@@ -20,7 +20,7 @@ describe('Database migrations', () => {
         { _id: new mongoose.Types.ObjectId(), name: 'Brand 2' }
       ],
       questions: [
-        { criterion: 'appearance', description: 'Rate appearance' }
+        { criterion: 'appearance', description: 'Rate appearance', type: 'rating' }
       ],
     });
   });

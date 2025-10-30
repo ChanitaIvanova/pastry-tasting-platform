@@ -24,7 +24,7 @@ describe('Questionnaire API', () => {
             { name: 'Brand 2' }
           ],
           questions: [
-            { criterion: 'appearance', description: 'Rate the appearance' }
+            { criterion: 'appearance', description: 'Rate the appearance', type: 'rating' }
           ]
         });
 

@@ -9,6 +9,29 @@ export const validateQuestionnaire = (data) => {
     errors.brands = 'At least two brands are required';
   }
 
+  if (!data.questions?.length) {
+    errors.questions = 'At least one question is required';
+  } else {
+    data.questions.forEach((question, index) => {
+      if (!question.criterion?.trim()) {
+        errors[`questions.${index}.criterion`] = 'Question criterion is required';
+      }
+
+      if (!question.description?.trim()) {
+        errors[`questions.${index}.description`] = 'Question description is required';
+      }
+
+      const type = question.type || 'rating';
+
+      if (type === 'single-select') {
+        const options = (question.options || []).filter(option => option && option.trim());
+        if (options.length === 0) {
+          errors[`questions.${index}.options`] = 'Single select questions require at least one option';
+        }
+      }
+    });
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors
